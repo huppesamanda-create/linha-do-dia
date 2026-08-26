@@ -2,7 +2,6 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const { randomUUID } = require("crypto");
-const PDFDocument = require("pdfkit");
 const { pool, initDatabase } = require("./db");
 
 const PORT = process.env.PORT || 3000;
@@ -80,6 +79,10 @@ function validDateKey(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value || "");
 }
 
+function sanitizeNotes(value) {
+  return String(value || "").slice(0, 12000);
+}
+
 function sanitizeSubtasks(value) {
   if (!Array.isArray(value)) {
     throw new Error("Checklist inválido.");
@@ -104,16 +107,26 @@ function sanitizeSubtasks(value) {
   });
 }
 
-function sanitizeNotes(value) {
-  return String(value || "").slice(0, 12000);
+async function getActivityById(id) {
+  const result = await pool.query(
+    `SELECT a.*, COALESCE(n.notes, '') AS notes
+       FROM activities a
+       LEFT JOIN activity_notes n ON n.activity_id = a.id
+      WHERE a.id = $1
+      LIMIT 1`,
+    [id]
+  );
+
+  return result.rows[0] || null;
 }
 
 async function getActive() {
   const result = await pool.query(
-    `SELECT *
-       FROM activities
-      WHERE status IN ('active', 'paused')
-      ORDER BY started_at DESC
+    `SELECT a.*, COALESCE(n.notes, '') AS notes
+       FROM activities a
+       LEFT JOIN activity_notes n ON n.activity_id = a.id
+      WHERE a.status IN ('active', 'paused')
+      ORDER BY a.started_at DESC
       LIMIT 1`
   );
 
@@ -125,11 +138,7 @@ function safeFilePath(urlPath) {
   const requested = cleanPath === "/" ? "/index.html" : cleanPath;
   const resolved = path.normalize(path.join(PUBLIC_DIR, requested));
 
-  if (!resolved.startsWith(PUBLIC_DIR)) {
-    return null;
-  }
-
-  return resolved;
+  return resolved.startsWith(PUBLIC_DIR) ? resolved : null;
 }
 
 function formatDayLabel(day) {
@@ -150,58 +159,47 @@ function formatDuration(milliseconds) {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
 
-  if (hours > 0) {
-    return `${hours}h ${String(minutes).padStart(2, "0")}min`;
-  }
-
-  if (minutes > 0) {
-    return `${minutes} min`;
-  }
-
+  if (hours > 0) return `${hours}h ${String(minutes).padStart(2, "0")}min`;
+  if (minutes > 0) return `${minutes} min`;
   return `${totalSeconds} s`;
 }
 
 function formatTotal(milliseconds) {
   const totalMinutes = Math.floor(Number(milliseconds || 0) / 60000);
 
-  if (totalMinutes < 60) {
-    return `${totalMinutes} min`;
-  }
+  if (totalMinutes < 60) return `${totalMinutes} min`;
 
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-
   return minutes > 0 ? `${hours}h ${minutes}min` : `${hours}h`;
 }
 
 async function exportDayPdf(res, day) {
+  // Carregamento tardio: o PDFKit não participa da inicialização da aplicação.
+  const PDFDocument = require("pdfkit");
+
   const result = await pool.query(
-    `SELECT *
-       FROM activities
-      WHERE status = 'completed'
-        AND (started_at AT TIME ZONE $1)::date = $2::date
-      ORDER BY started_at ASC`,
+    `SELECT a.*, COALESCE(n.notes, '') AS notes
+       FROM activities a
+       LEFT JOIN activity_notes n ON n.activity_id = a.id
+      WHERE a.status = 'completed'
+        AND (a.started_at AT TIME ZONE $1)::date = $2::date
+      ORDER BY a.started_at ASC`,
     [TIME_ZONE, day]
   );
 
   const rows = result.rows;
   const total = rows.reduce((sum, row) => sum + Number(row.duration_ms || 0), 0);
-  const filename = `linha-do-dia-${day}.pdf`;
 
   res.writeHead(200, {
     "Content-Type": "application/pdf",
-    "Content-Disposition": `attachment; filename="${filename}"`,
+    "Content-Disposition": `attachment; filename="linha-do-dia-${day}.pdf"`,
     "Cache-Control": "no-store"
   });
 
   const doc = new PDFDocument({
     size: "A4",
-    margins: {
-      top: 54,
-      right: 54,
-      bottom: 54,
-      left: 54
-    },
+    margins: { top: 54, right: 54, bottom: 54, left: 54 },
     info: {
       Title: `Linha do Dia - ${formatDayLabel(day)}`,
       Author: "Linha do Dia"
@@ -210,57 +208,26 @@ async function exportDayPdf(res, day) {
 
   doc.pipe(res);
 
-  doc
-    .fillColor("#222222")
-    .font("Helvetica-Bold")
-    .fontSize(20)
-    .text("Linha do Dia");
-
-  doc
-    .moveDown(0.25)
-    .font("Helvetica")
-    .fontSize(10)
-    .fillColor("#666666")
-    .text(formatDayLabel(day));
-
-  doc
-    .moveDown(0.25)
-    .text(`Tempo total registrado: ${formatTotal(total)}`);
-
+  doc.fillColor("#222222").font("Helvetica-Bold").fontSize(20).text("Linha do Dia");
+  doc.moveDown(0.25).font("Helvetica").fontSize(10).fillColor("#666666").text(formatDayLabel(day));
+  doc.moveDown(0.25).text(`Tempo total registrado: ${formatTotal(total)}`);
   doc.moveDown(1.2);
 
   if (!rows.length) {
-    doc
-      .font("Helvetica")
-      .fontSize(11)
-      .fillColor("#555555")
+    doc.font("Helvetica").fontSize(11).fillColor("#555555")
       .text("Nenhuma atividade registrada neste dia.");
-
     doc.end();
     return;
   }
 
   rows.forEach((row, index) => {
-    if (index > 0) {
-      doc.moveDown(0.8);
-    }
+    if (index > 0) doc.moveDown(0.8);
 
-    doc
-      .font("Helvetica-Bold")
-      .fontSize(10)
-      .fillColor("#444444")
-      .text(
-        `${formatPdfClock(row.started_at)} - ${formatPdfClock(row.ended_at)}   ${formatDuration(row.duration_ms)}`
-      );
+    doc.font("Helvetica-Bold").fontSize(10).fillColor("#444444")
+      .text(`${formatPdfClock(row.started_at)} - ${formatPdfClock(row.ended_at)}   ${formatDuration(row.duration_ms)}`);
 
-    doc
-      .moveDown(0.25)
-      .font("Helvetica-Bold")
-      .fontSize(12)
-      .fillColor("#222222")
-      .text(row.title, {
-        lineGap: 2
-      });
+    doc.moveDown(0.25).font("Helvetica-Bold").fontSize(12).fillColor("#222222")
+      .text(row.title, { lineGap: 2 });
 
     const subtasks = Array.isArray(row.subtasks) ? row.subtasks : [];
 
@@ -268,9 +235,7 @@ async function exportDayPdf(res, day) {
       doc.moveDown(0.35);
 
       subtasks.forEach(subtask => {
-        doc
-          .font("Helvetica")
-          .fontSize(9.5)
+        doc.font("Helvetica").fontSize(9.5)
           .fillColor(subtask.done ? "#777777" : "#333333")
           .text(`${subtask.done ? "[x]" : "[ ]"} ${subtask.text}`, {
             indent: 10,
@@ -282,30 +247,17 @@ async function exportDayPdf(res, day) {
     const notes = String(row.notes || "").trim();
 
     if (notes) {
-      doc
-        .moveDown(0.45)
-        .font("Helvetica-Bold")
-        .fontSize(9.5)
-        .fillColor("#555555")
+      doc.moveDown(0.45).font("Helvetica-Bold").fontSize(9.5).fillColor("#555555")
         .text("Anotações:");
 
-      doc
-        .moveDown(0.15)
-        .font("Helvetica")
-        .fontSize(9.5)
-        .fillColor("#444444")
-        .text(notes, {
-          indent: 10,
-          lineGap: 2
-        });
+      doc.moveDown(0.15).font("Helvetica").fontSize(9.5).fillColor("#444444")
+        .text(notes, { indent: 10, lineGap: 2 });
     }
 
     if (index < rows.length - 1) {
       doc.moveDown(0.8);
-
       const y = doc.y;
-      doc
-        .moveTo(doc.page.margins.left, y)
+      doc.moveTo(doc.page.margins.left, y)
         .lineTo(doc.page.width - doc.page.margins.right, y)
         .strokeColor("#dddddd")
         .lineWidth(0.7)
@@ -333,18 +285,20 @@ async function handleApi(req, res, url) {
 
     const [activeResult, completedResult] = await Promise.all([
       pool.query(
-        `SELECT *
-           FROM activities
-          WHERE status IN ('active', 'paused')
-          ORDER BY started_at DESC
+        `SELECT a.*, COALESCE(n.notes, '') AS notes
+           FROM activities a
+           LEFT JOIN activity_notes n ON n.activity_id = a.id
+          WHERE a.status IN ('active', 'paused')
+          ORDER BY a.started_at DESC
           LIMIT 1`
       ),
       pool.query(
-        `SELECT *
-           FROM activities
-          WHERE status = 'completed'
-            AND (started_at AT TIME ZONE $1)::date = $2::date
-          ORDER BY started_at ASC`,
+        `SELECT a.*, COALESCE(n.notes, '') AS notes
+           FROM activities a
+           LEFT JOIN activity_notes n ON n.activity_id = a.id
+          WHERE a.status = 'completed'
+            AND (a.started_at AT TIME ZONE $1)::date = $2::date
+          ORDER BY a.started_at ASC`,
         [TIME_ZONE, day]
       )
     ]);
@@ -353,7 +307,6 @@ async function handleApi(req, res, url) {
       active: mapActivity(activeResult.rows[0]),
       entries: completedResult.rows.map(mapActivity)
     });
-
     return true;
   }
 
@@ -387,19 +340,37 @@ async function handleApi(req, res, url) {
     }
 
     const id = randomUUID();
+    const client = await pool.connect();
 
-    const result = await pool.query(
-      `INSERT INTO activities
-        (id, title, notes, status, started_at, last_started_at, accumulated_ms, subtasks)
-       VALUES ($1, $2, $3, 'active', NOW(), NOW(), 0, '[]'::jsonb)
-       RETURNING *`,
-      [id, title, notes]
-    );
+    try {
+      await client.query("BEGIN");
 
-    sendJson(res, 201, {
-      active: mapActivity(result.rows[0])
-    });
+      await client.query(
+        `INSERT INTO activities
+          (id, title, status, started_at, last_started_at, accumulated_ms, subtasks)
+         VALUES ($1, $2, 'active', NOW(), NOW(), 0, '[]'::jsonb)`,
+        [id, title]
+      );
 
+      if (notes) {
+        await client.query(
+          `INSERT INTO activity_notes (activity_id, notes, updated_at)
+           VALUES ($1, $2, NOW())
+           ON CONFLICT (activity_id)
+           DO UPDATE SET notes = EXCLUDED.notes, updated_at = NOW()`,
+          [id, notes]
+        );
+      }
+
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    sendJson(res, 201, { active: mapActivity(await getActivityById(id)) });
     return true;
   }
 
@@ -411,33 +382,25 @@ async function handleApi(req, res, url) {
       return true;
     }
 
-    if (row.status === "paused") {
-      sendJson(res, 200, { active: mapActivity(row) });
-      return true;
+    if (row.status !== "paused") {
+      const extra = row.last_started_at
+        ? Math.max(0, Date.now() - new Date(row.last_started_at).getTime())
+        : 0;
+
+      const accumulated = Number(row.accumulated_ms || 0) + extra;
+
+      await pool.query(
+        `UPDATE activities
+            SET status = 'paused',
+                accumulated_ms = $2,
+                last_started_at = NULL,
+                updated_at = NOW()
+          WHERE id = $1`,
+        [row.id, accumulated]
+      );
     }
 
-    const now = Date.now();
-    const extra = row.last_started_at
-      ? Math.max(0, now - new Date(row.last_started_at).getTime())
-      : 0;
-
-    const accumulated = Number(row.accumulated_ms || 0) + extra;
-
-    const result = await pool.query(
-      `UPDATE activities
-          SET status = 'paused',
-              accumulated_ms = $2,
-              last_started_at = NULL,
-              updated_at = NOW()
-        WHERE id = $1
-        RETURNING *`,
-      [row.id, accumulated]
-    );
-
-    sendJson(res, 200, {
-      active: mapActivity(result.rows[0])
-    });
-
+    sendJson(res, 200, { active: mapActivity(await getActivityById(row.id)) });
     return true;
   }
 
@@ -449,25 +412,18 @@ async function handleApi(req, res, url) {
       return true;
     }
 
-    if (row.status === "active") {
-      sendJson(res, 200, { active: mapActivity(row) });
-      return true;
+    if (row.status !== "active") {
+      await pool.query(
+        `UPDATE activities
+            SET status = 'active',
+                last_started_at = NOW(),
+                updated_at = NOW()
+          WHERE id = $1`,
+        [row.id]
+      );
     }
 
-    const result = await pool.query(
-      `UPDATE activities
-          SET status = 'active',
-              last_started_at = NOW(),
-              updated_at = NOW()
-        WHERE id = $1
-        RETURNING *`,
-      [row.id]
-    );
-
-    sendJson(res, 200, {
-      active: mapActivity(result.rows[0])
-    });
-
+    sendJson(res, 200, { active: mapActivity(await getActivityById(row.id)) });
     return true;
   }
 
@@ -489,19 +445,15 @@ async function handleApi(req, res, url) {
       return true;
     }
 
-    const result = await pool.query(
+    await pool.query(
       `UPDATE activities
           SET subtasks = $2::jsonb,
               updated_at = NOW()
-        WHERE id = $1
-        RETURNING *`,
+        WHERE id = $1`,
       [row.id, JSON.stringify(subtasks)]
     );
 
-    sendJson(res, 200, {
-      active: mapActivity(result.rows[0])
-    });
-
+    sendJson(res, 200, { active: mapActivity(await getActivityById(row.id)) });
     return true;
   }
 
@@ -516,19 +468,15 @@ async function handleApi(req, res, url) {
     const body = await readJson(req);
     const notes = sanitizeNotes(body.notes);
 
-    const result = await pool.query(
-      `UPDATE activities
-          SET notes = $2,
-              updated_at = NOW()
-        WHERE id = $1
-        RETURNING *`,
+    await pool.query(
+      `INSERT INTO activity_notes (activity_id, notes, updated_at)
+       VALUES ($1, $2, NOW())
+       ON CONFLICT (activity_id)
+       DO UPDATE SET notes = EXCLUDED.notes, updated_at = NOW()`,
       [row.id, notes]
     );
 
-    sendJson(res, 200, {
-      active: mapActivity(result.rows[0])
-    });
-
+    sendJson(res, 200, { active: mapActivity(await getActivityById(row.id)) });
     return true;
   }
 
@@ -540,16 +488,15 @@ async function handleApi(req, res, url) {
       return true;
     }
 
-    const now = Date.now();
     let duration = Number(row.accumulated_ms || 0);
 
     if (row.status === "active" && row.last_started_at) {
-      duration += Math.max(0, now - new Date(row.last_started_at).getTime());
+      duration += Math.max(0, Date.now() - new Date(row.last_started_at).getTime());
     }
 
     duration = Math.max(1000, duration);
 
-    const result = await pool.query(
+    await pool.query(
       `UPDATE activities
           SET status = 'completed',
               ended_at = NOW(),
@@ -557,15 +504,11 @@ async function handleApi(req, res, url) {
               accumulated_ms = $2,
               duration_ms = $2,
               updated_at = NOW()
-        WHERE id = $1
-        RETURNING *`,
+        WHERE id = $1`,
       [row.id, duration]
     );
 
-    sendJson(res, 200, {
-      entry: mapActivity(result.rows[0])
-    });
-
+    sendJson(res, 200, { entry: mapActivity(await getActivityById(row.id)) });
     return true;
   }
 
@@ -577,12 +520,42 @@ async function handleApi(req, res, url) {
       return true;
     }
 
-    await pool.query(
-      `DELETE FROM activities
+    const ids = await pool.query(
+      `SELECT id
+         FROM activities
         WHERE status = 'completed'
           AND (started_at AT TIME ZONE $1)::date = $2::date`,
       [TIME_ZONE, day]
     );
+
+    const activityIds = ids.rows.map(row => row.id);
+
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      if (activityIds.length) {
+        await client.query(
+          `DELETE FROM activity_notes WHERE activity_id = ANY($1::text[])`,
+          [activityIds]
+        );
+      }
+
+      await client.query(
+        `DELETE FROM activities
+          WHERE status = 'completed'
+            AND (started_at AT TIME ZONE $1)::date = $2::date`,
+        [TIME_ZONE, day]
+      );
+
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
 
     sendJson(res, 200, { ok: true });
     return true;
@@ -593,10 +566,7 @@ async function handleApi(req, res, url) {
 
 const server = http.createServer(async (req, res) => {
   try {
-    const url = new URL(
-      req.url || "/",
-      `http://${req.headers.host || "localhost"}`
-    );
+    const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
 
     if (url.pathname.startsWith("/api/")) {
       const handled = await handleApi(req, res, url);
@@ -611,20 +581,14 @@ const server = http.createServer(async (req, res) => {
     const filePath = safeFilePath(url.pathname);
 
     if (!filePath) {
-      res.writeHead(403, {
-        "Content-Type": "text/plain; charset=utf-8"
-      });
-
+      res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
       res.end("Acesso negado.");
       return;
     }
 
     fs.stat(filePath, (error, stat) => {
       if (error || !stat.isFile()) {
-        res.writeHead(404, {
-          "Content-Type": "text/plain; charset=utf-8"
-        });
-
+        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
         res.end("Arquivo não encontrado.");
         return;
       }
@@ -633,9 +597,7 @@ const server = http.createServer(async (req, res) => {
 
       res.writeHead(200, {
         "Content-Type": MIME_TYPES[extension] || "application/octet-stream",
-        "Cache-Control": extension === ".html"
-          ? "no-cache"
-          : "public, max-age=3600"
+        "Cache-Control": extension === ".html" ? "no-cache" : "public, max-age=3600"
       });
 
       fs.createReadStream(filePath).pipe(res);
@@ -644,9 +606,7 @@ const server = http.createServer(async (req, res) => {
     console.error(error);
 
     if (!res.headersSent) {
-      sendJson(res, 500, {
-        error: "Erro interno do servidor."
-      });
+      sendJson(res, 500, { error: "Erro interno do servidor." });
     } else {
       res.end();
     }

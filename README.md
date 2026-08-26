@@ -1,35 +1,44 @@
-# Linha do Dia — PostgreSQL
+# Linha do Dia v3.1
 
-Esta é a versão persistente da Linha do Dia.
+Versão de correção da atualização v3.
 
-## Estrutura
+## Correção de inicialização
+
+A versão v3 tentava adicionar a coluna `notes` diretamente na tabela `activities`
+durante a inicialização. Nesta versão isso foi removido.
+
+As anotações agora ficam em uma tabela separada:
 
 ```text
-/
-├── .gitignore
-├── package.json
-├── db.js
-├── schema.sql
-├── server.js
-└── public/
-    └── index.html
+activity_notes
 ```
 
-## Railway
+Isso evita alterar a tabela que já contém seus registros.
 
-1. Crie/deploy a aplicação a partir do repositório GitHub.
-2. No mesmo projeto Railway, clique em `+ New`.
-3. Selecione `Database` → `PostgreSQL`.
-4. Abra o serviço da aplicação.
-5. Vá em `Variables`.
-6. Adicione uma Reference Variable chamada `DATABASE_URL`, apontando para `Postgres.DATABASE_URL`.
-7. Aplique/deploy as alterações.
+O PDFKit também passou a ser carregado somente quando o botão de exportação de PDF é usado,
+e não durante a inicialização da aplicação.
 
-Não é necessário expor o PostgreSQL publicamente.
+## O que permanece
 
-Na primeira inicialização, o servidor cria a tabela automaticamente a partir do `schema.sql`.
+- dados existentes preservados;
+- descrição + anotações;
+- anotações salvas no PostgreSQL;
+- botão recolhido de anotações na linha do tempo;
+- linha do tempo do mais antigo para o mais recente;
+- exportação em PDF;
+- checklist;
+- cronômetro.
 
-## Persistência
+## Atualização
 
-Atividades, horários, duração, estado do cronômetro e checklists ficam no PostgreSQL.
-Você pode atualizar a página ou abrir o site em outro navegador/dispositivo e continuar vendo os dados do banco.
+Substitua no GitHub:
+
+- `package.json`
+- `db.js`
+- `schema.sql`
+- `server.js`
+- `public/index.html`
+
+Não apague o PostgreSQL.
+
+A `.gitignore` atual pode permanecer como está.

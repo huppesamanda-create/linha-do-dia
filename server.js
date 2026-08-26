@@ -612,6 +612,12 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
 
+    if (url.pathname === "/enam") {
+      res.writeHead(302, { Location: "/enam/" });
+      res.end();
+      return;
+    }
+
     if (url.pathname.startsWith("/api/")) {
       const handled = await handleApi(req, res, url);
 

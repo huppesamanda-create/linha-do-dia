@@ -23,3 +23,10 @@ CREATE INDEX IF NOT EXISTS idx_activities_status
 
 CREATE INDEX IF NOT EXISTS idx_activities_started_at
   ON activities(started_at ASC);
+
+
+CREATE TABLE IF NOT EXISTS enam_portal_state (
+  id TEXT PRIMARY KEY,
+  data JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

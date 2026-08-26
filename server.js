@@ -135,7 +135,12 @@ async function getActive() {
 
 function safeFilePath(urlPath) {
   const cleanPath = decodeURIComponent((urlPath || "/").split("?")[0]);
-  const requested = cleanPath === "/" ? "/index.html" : cleanPath;
+  let requested = cleanPath === "/" ? "/index.html" : cleanPath;
+
+  if (cleanPath === "/enam" || cleanPath === "/enam/") {
+    requested = "/enam/index.html";
+  }
+
   const resolved = path.normalize(path.join(PUBLIC_DIR, requested));
 
   return resolved.startsWith(PUBLIC_DIR) ? resolved : null;
@@ -269,6 +274,45 @@ async function exportDayPdf(res, day) {
 }
 
 async function handleApi(req, res, url) {
+
+  // Portal ENAM 2026.2
+  if (req.method === "GET" && url.pathname === "/api/enam/meta") {
+    sendJson(res, 200, {
+      authRequired: false,
+      authenticated: true,
+      persistence: "database"
+    });
+    return true;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/enam/state") {
+    const result = await pool.query(
+      `SELECT data
+         FROM enam_portal_state
+        WHERE id = 'main'
+        LIMIT 1`
+    );
+
+    sendJson(res, 200, result.rows[0]?.data || {});
+    return true;
+  }
+
+  if (req.method === "PUT" && url.pathname === "/api/enam/state") {
+    const body = await readJson(req);
+
+    await pool.query(
+      `INSERT INTO enam_portal_state (id, data, updated_at)
+       VALUES ('main', $1::jsonb, NOW())
+       ON CONFLICT (id)
+       DO UPDATE SET data = EXCLUDED.data,
+                     updated_at = NOW()`,
+      [JSON.stringify(body || {})]
+    );
+
+    sendJson(res, 200, { ok: true });
+    return true;
+  }
+
   if (req.method === "GET" && url.pathname === "/api/health") {
     await pool.query("SELECT 1");
     sendJson(res, 200, { ok: true });

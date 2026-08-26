@@ -1,8 +1,8 @@
 {
   "name": "linha-do-dia",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
-  "description": "Cronometro simples com checklist e linha do tempo diaria, persistido em PostgreSQL.",
+  "description": "Cronometro simples com checklist, anotacoes, linha do tempo diaria e exportacao em PDF.",
   "scripts": {
     "start": "node server.js"
   },
@@ -10,6 +10,7 @@
     "node": ">=20"
   },
   "dependencies": {
+    "pdfkit": "^0.17.2",
     "pg": "^8.16.3"
   }
 }

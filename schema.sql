@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS activities (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
+  notes TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL CHECK (status IN ('active', 'paused', 'completed')),
   started_at TIMESTAMPTZ NOT NULL,
   last_started_at TIMESTAMPTZ,
@@ -12,8 +13,11 @@ CREATE TABLE IF NOT EXISTS activities (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE activities
+  ADD COLUMN IF NOT EXISTS notes TEXT NOT NULL DEFAULT '';
+
 CREATE INDEX IF NOT EXISTS idx_activities_status
   ON activities(status);
 
 CREATE INDEX IF NOT EXISTS idx_activities_started_at
-  ON activities(started_at DESC);
+  ON activities(started_at ASC);

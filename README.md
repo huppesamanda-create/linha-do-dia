@@ -1,24 +1,15 @@
-# Linha do Dia
+# Linha do Dia — PostgreSQL
 
-Projeto mínimo para substituir o antigo Segundo Cérebro.
+Esta é a versão persistente da Linha do Dia.
 
-## Arquivos
-
-- `package.json`
-- `server.js`
-- `public/index.html`
-- `.gitignore`
-
-## Instalação no GitHub
-
-1. Apague os arquivos antigos do repositório.
-2. Envie para a raiz do repositório exatamente os arquivos e a pasta deste pacote.
-3. A estrutura final deve ficar assim:
+## Estrutura
 
 ```text
 /
 ├── .gitignore
 ├── package.json
+├── db.js
+├── schema.sql
 ├── server.js
 └── public/
     └── index.html
@@ -26,24 +17,19 @@ Projeto mínimo para substituir o antigo Segundo Cérebro.
 
 ## Railway
 
-O Railway deve detectar Node automaticamente.
+1. Crie/deploy a aplicação a partir do repositório GitHub.
+2. No mesmo projeto Railway, clique em `+ New`.
+3. Selecione `Database` → `PostgreSQL`.
+4. Abra o serviço da aplicação.
+5. Vá em `Variables`.
+6. Adicione uma Reference Variable chamada `DATABASE_URL`, apontando para `Postgres.DATABASE_URL`.
+7. Aplique/deploy as alterações.
 
-Comando de start:
+Não é necessário expor o PostgreSQL publicamente.
 
-```text
-npm start
-```
-
-Não é necessário banco de dados nem variável de ambiente.
+Na primeira inicialização, o servidor cria a tabela automaticamente a partir do `schema.sql`.
 
 ## Persistência
 
-Os registros ficam salvos no `localStorage` do navegador.
-
-Isso significa:
-- atualizar a página não apaga os dados;
-- fechar e abrir o navegador não apaga os dados;
-- um cronômetro ativo continua depois de recarregar a página;
-- os dados pertencem ao navegador/dispositivo em que foram criados.
-
-Se você limpar os dados do navegador ou abrir o site em outro dispositivo, os registros não estarão lá.
+Atividades, horários, duração, estado do cronômetro e checklists ficam no PostgreSQL.
+Você pode atualizar a página ou abrir o site em outro navegador/dispositivo e continuar vendo os dados do banco.

@@ -79,6 +79,15 @@ function validDateKey(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value || "");
 }
 
+function validTime(value) {
+  return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value || "");
+}
+
+function timeToMinutes(value) {
+  const [hours, minutes] = value.split(":").map(Number);
+  return (hours * 60) + minutes;
+}
+
 function sanitizeNotes(value) {
   return String(value || "").slice(0, 12000);
 }
@@ -135,12 +144,7 @@ async function getActive() {
 
 function safeFilePath(urlPath) {
   const cleanPath = decodeURIComponent((urlPath || "/").split("?")[0]);
-  let requested = cleanPath === "/" ? "/index.html" : cleanPath;
-
-  if (cleanPath === "/enam" || cleanPath === "/enam/") {
-    requested = "/enam/index.html";
-  }
-
+  const requested = cleanPath === "/" ? "/index.html" : cleanPath;
   const resolved = path.normalize(path.join(PUBLIC_DIR, requested));
 
   return resolved.startsWith(PUBLIC_DIR) ? resolved : null;
@@ -274,45 +278,6 @@ async function exportDayPdf(res, day) {
 }
 
 async function handleApi(req, res, url) {
-
-  // Portal ENAM 2026.2
-  if (req.method === "GET" && url.pathname === "/api/enam/meta") {
-    sendJson(res, 200, {
-      authRequired: false,
-      authenticated: true,
-      persistence: "database"
-    });
-    return true;
-  }
-
-  if (req.method === "GET" && url.pathname === "/api/enam/state") {
-    const result = await pool.query(
-      `SELECT data
-         FROM enam_portal_state
-        WHERE id = 'main'
-        LIMIT 1`
-    );
-
-    sendJson(res, 200, result.rows[0]?.data || {});
-    return true;
-  }
-
-  if (req.method === "PUT" && url.pathname === "/api/enam/state") {
-    const body = await readJson(req);
-
-    await pool.query(
-      `INSERT INTO enam_portal_state (id, data, updated_at)
-       VALUES ('main', $1::jsonb, NOW())
-       ON CONFLICT (id)
-       DO UPDATE SET data = EXCLUDED.data,
-                     updated_at = NOW()`,
-      [JSON.stringify(body || {})]
-    );
-
-    sendJson(res, 200, { ok: true });
-    return true;
-  }
-
   if (req.method === "GET" && url.pathname === "/api/health") {
     await pool.query("SELECT 1");
     sendJson(res, 200, { ok: true });
@@ -556,6 +521,184 @@ async function handleApi(req, res, url) {
     return true;
   }
 
+
+  if (req.method === "POST" && url.pathname === "/api/manual") {
+    const body = await readJson(req);
+
+    const title = String(body.title || "").trim().slice(0, 500);
+    const notes = sanitizeNotes(body.notes);
+    const day = String(body.day || "");
+    const startTime = String(body.startTime || "");
+    const endTime = String(body.endTime || "");
+
+    if (!title) {
+      sendJson(res, 400, { error: "Informe a descrição da atividade." });
+      return true;
+    }
+
+    if (!validDateKey(day) || !validTime(startTime) || !validTime(endTime)) {
+      sendJson(res, 400, { error: "Data ou horário inválido." });
+      return true;
+    }
+
+    const startMinutes = timeToMinutes(startTime);
+    const endMinutes = timeToMinutes(endTime);
+
+    if (endMinutes <= startMinutes) {
+      sendJson(res, 400, {
+        error: "O horário final precisa ser posterior ao horário inicial."
+      });
+      return true;
+    }
+
+    const durationMs = (endMinutes - startMinutes) * 60 * 1000;
+    const id = randomUUID();
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      await client.query(
+        `INSERT INTO activities
+          (
+            id,
+            title,
+            status,
+            started_at,
+            last_started_at,
+            ended_at,
+            accumulated_ms,
+            duration_ms,
+            subtasks
+          )
+         VALUES (
+           $1,
+           $2,
+           'completed',
+           (($3::date + $4::time) AT TIME ZONE $7),
+           NULL,
+           (($3::date + $5::time) AT TIME ZONE $7),
+           $6,
+           $6,
+           '[]'::jsonb
+         )`,
+        [id, title, day, startTime, endTime, durationMs, TIME_ZONE]
+      );
+
+      if (notes) {
+        await client.query(
+          `INSERT INTO activity_notes (activity_id, notes, updated_at)
+           VALUES ($1, $2, NOW())
+           ON CONFLICT (activity_id)
+           DO UPDATE SET notes = EXCLUDED.notes, updated_at = NOW()`,
+          [id, notes]
+        );
+      }
+
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    sendJson(res, 201, {
+      entry: mapActivity(await getActivityById(id))
+    });
+
+    return true;
+  }
+
+  const editEntryMatch = url.pathname.match(/^\/api\/entries\/([^/]+)$/);
+
+  if (req.method === "PUT" && editEntryMatch) {
+    const id = decodeURIComponent(editEntryMatch[1]);
+    const body = await readJson(req);
+
+    const title = String(body.title || "").trim().slice(0, 500);
+    const notes = sanitizeNotes(body.notes);
+    const day = String(body.day || "");
+    const startTime = String(body.startTime || "");
+    const endTime = String(body.endTime || "");
+
+    if (!title) {
+      sendJson(res, 400, { error: "Informe a descrição da atividade." });
+      return true;
+    }
+
+    if (!validDateKey(day) || !validTime(startTime) || !validTime(endTime)) {
+      sendJson(res, 400, { error: "Data ou horário inválido." });
+      return true;
+    }
+
+    const startMinutes = timeToMinutes(startTime);
+    const endMinutes = timeToMinutes(endTime);
+
+    if (endMinutes <= startMinutes) {
+      sendJson(res, 400, {
+        error: "O horário final precisa ser posterior ao horário inicial."
+      });
+      return true;
+    }
+
+    const durationMs = (endMinutes - startMinutes) * 60 * 1000;
+
+    const existing = await pool.query(
+      `SELECT id
+         FROM activities
+        WHERE id = $1
+          AND status = 'completed'
+        LIMIT 1`,
+      [id]
+    );
+
+    if (!existing.rows.length) {
+      sendJson(res, 404, { error: "Registro não encontrado." });
+      return true;
+    }
+
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      await client.query(
+        `UPDATE activities
+            SET title = $2,
+                started_at = (($3::date + $4::time) AT TIME ZONE $7),
+                ended_at = (($3::date + $5::time) AT TIME ZONE $7),
+                last_started_at = NULL,
+                accumulated_ms = $6,
+                duration_ms = $6,
+                updated_at = NOW()
+          WHERE id = $1`,
+        [id, title, day, startTime, endTime, durationMs, TIME_ZONE]
+      );
+
+      await client.query(
+        `INSERT INTO activity_notes (activity_id, notes, updated_at)
+         VALUES ($1, $2, NOW())
+         ON CONFLICT (activity_id)
+         DO UPDATE SET notes = EXCLUDED.notes, updated_at = NOW()`,
+        [id, notes]
+      );
+
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    sendJson(res, 200, {
+      entry: mapActivity(await getActivityById(id))
+    });
+
+    return true;
+  }
+
   if (req.method === "DELETE" && url.pathname === "/api/day") {
     const day = url.searchParams.get("day");
 
@@ -611,12 +754,6 @@ async function handleApi(req, res, url) {
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
-
-    if (url.pathname === "/enam") {
-      res.writeHead(302, { Location: "/enam/" });
-      res.end();
-      return;
-    }
 
     if (url.pathname.startsWith("/api/")) {
       const handled = await handleApi(req, res, url);

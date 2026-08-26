@@ -584,6 +584,200 @@
       color: var(--danger);
     }
 
+
+    .timeline-title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .timeline-title-row .timeline-title {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .entry-menu {
+      width: 28px;
+      height: 28px;
+      flex: 0 0 28px;
+      margin-top: 2px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #343434;
+      padding: 0;
+      font-size: 15px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: 1px;
+      transition: color 0.15s ease, background 0.15s ease;
+    }
+
+    .entry-menu:hover,
+    .entry-menu:focus-visible {
+      background: #0d0d0d;
+      color: #888888;
+      outline: none;
+    }
+
+    .timeline-tools {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .manual-toggle {
+      width: 34px;
+      min-width: 34px;
+      height: 34px;
+      min-height: 34px;
+      border-color: #202020;
+      padding: 0;
+      color: #5b5b5b;
+      font-size: 20px;
+      font-weight: 400;
+      line-height: 1;
+    }
+
+    .manual-toggle:hover:not(:disabled) {
+      color: #c5c5c5;
+    }
+
+    .inline-panel {
+      display: none;
+      margin: -8px 0 30px;
+      padding: 18px 0 22px;
+      border-top: 1px solid #161616;
+      border-bottom: 1px solid #161616;
+    }
+
+    .inline-panel.visible {
+      display: block;
+    }
+
+    .inline-panel-title {
+      margin-bottom: 16px;
+      color: #8d8d8d;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .inline-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .inline-field {
+      min-width: 0;
+    }
+
+    .inline-field.full {
+      grid-column: 1 / -1;
+    }
+
+    .inline-label {
+      display: block;
+      margin-bottom: 7px;
+      color: #646464;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .inline-input,
+    .inline-textarea {
+      width: 100%;
+      border: 1px solid #1d1d1d;
+      border-radius: 7px;
+      background: #080808;
+      color: #c7c7c7;
+      outline: none;
+      padding: 10px 11px;
+      font: inherit;
+      font-size: 13px;
+    }
+
+    .inline-input:focus,
+    .inline-textarea:focus {
+      border-color: #383838;
+    }
+
+    .inline-textarea {
+      min-height: 78px;
+      resize: vertical;
+      line-height: 1.55;
+    }
+
+    .inline-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .inline-save,
+    .inline-cancel {
+      min-height: 34px;
+      border-radius: 6px;
+      padding: 0 11px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .inline-save {
+      border: 1px solid #585858;
+      background: #d0d0d0;
+      color: #080808;
+    }
+
+    .inline-cancel {
+      border: 1px solid #202020;
+      background: transparent;
+      color: #666666;
+    }
+
+    .inline-error {
+      min-height: 17px;
+      margin-top: 8px;
+      color: #9a6666;
+      font-size: 11px;
+    }
+
+    .entry-editor {
+      display: none;
+      margin-top: 17px;
+      padding: 16px 0 2px;
+      border-top: 1px solid #151515;
+    }
+
+    .entry-editor.visible {
+      display: block;
+    }
+
+    @media (max-width: 520px) {
+      .inline-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .inline-field.full {
+        grid-column: auto;
+      }
+
+      .timeline-tools {
+        width: 100%;
+      }
+
+      .timeline-tools .pdf-button {
+        flex: 1;
+        width: auto;
+      }
+    }
+
     @media (max-width: 820px) {
       .page {
         width: min(100% - 30px, 660px);
@@ -767,10 +961,69 @@
             <span class="summary" id="summary">Carregando...</span>
           </div>
 
-          <button class="button pdf-button" id="exportPdfButton" type="button" disabled>
-            Exportar PDF do dia
-          </button>
+          <div class="timeline-tools">
+            <button
+              class="button manual-toggle"
+              id="manualToggleButton"
+              type="button"
+              title="Lançamento manual"
+              aria-label="Novo lançamento manual"
+              aria-expanded="false"
+            >
+              +
+            </button>
+
+            <button class="button pdf-button" id="exportPdfButton" type="button" disabled>
+              Exportar PDF do dia
+            </button>
+          </div>
         </div>
+
+
+        <form class="inline-panel" id="manualForm">
+          <div class="inline-panel-title">Lançamento manual</div>
+
+          <div class="inline-grid">
+            <div class="inline-field full">
+              <label class="inline-label" for="manualTitle">Descrição</label>
+              <input
+                class="inline-input"
+                id="manualTitle"
+                type="text"
+                maxlength="500"
+                autocomplete="off"
+                placeholder="O que foi feito?"
+              >
+            </div>
+
+            <div class="inline-field">
+              <label class="inline-label" for="manualStart">Início</label>
+              <input class="inline-input" id="manualStart" type="time">
+            </div>
+
+            <div class="inline-field">
+              <label class="inline-label" for="manualEnd">Fim</label>
+              <input class="inline-input" id="manualEnd" type="time">
+            </div>
+
+            <div class="inline-field full">
+              <label class="inline-label" for="manualNotes">Anotações</label>
+              <textarea
+                class="inline-textarea"
+                id="manualNotes"
+                maxlength="12000"
+                placeholder="Opcional"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="inline-error" id="manualError" aria-live="polite"></div>
+
+          <div class="inline-actions">
+            <button class="inline-save" type="submit">Salvar</button>
+            <button class="inline-cancel" id="manualCancelButton" type="button">Cancelar</button>
+          </div>
+        </form>
 
         <div class="empty" id="emptyState">
           Conforme você conclui cada bloco, ele aparece aqui em ordem cronológica,
@@ -824,6 +1077,15 @@
       const clearDayButton = $("#clearDayButton");
       const exportPdfButton = $("#exportPdfButton");
 
+      const manualToggleButton = $("#manualToggleButton");
+      const manualForm = $("#manualForm");
+      const manualTitle = $("#manualTitle");
+      const manualStart = $("#manualStart");
+      const manualEnd = $("#manualEnd");
+      const manualNotes = $("#manualNotes");
+      const manualError = $("#manualError");
+      const manualCancelButton = $("#manualCancelButton");
+
       let active = null;
       let entries = [];
       let timerInterval = null;
@@ -843,8 +1105,18 @@
         ].join("-");
       }
 
+      function inputTime(value) {
+        return new Intl.DateTimeFormat("pt-BR", {
+          timeZone: "America/Sao_Paulo",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false
+        }).format(new Date(value));
+      }
+
       function formatClock(value) {
         return new Intl.DateTimeFormat("pt-BR", {
+          timeZone: "America/Sao_Paulo",
           hour: "2-digit",
           minute: "2-digit"
         }).format(new Date(value));
@@ -964,6 +1236,7 @@
         startButton.disabled = running || busy;
         pauseButton.disabled = !running || busy;
         finishButton.disabled = !running || busy;
+        manualToggleButton.disabled = busy;
         exportPdfButton.disabled = entries.length === 0 || busy;
 
         pauseButton.textContent =
@@ -1066,6 +1339,140 @@
         });
       }
 
+      function makeEntryEditor(entry, item, menuButton) {
+        const editor = document.createElement("form");
+        editor.className = "entry-editor";
+
+        const grid = document.createElement("div");
+        grid.className = "inline-grid";
+
+        const descriptionField = document.createElement("div");
+        descriptionField.className = "inline-field full";
+
+        const descriptionLabel = document.createElement("label");
+        descriptionLabel.className = "inline-label";
+        descriptionLabel.textContent = "Descrição";
+
+        const descriptionInput = document.createElement("input");
+        descriptionInput.className = "inline-input";
+        descriptionInput.type = "text";
+        descriptionInput.maxLength = 500;
+        descriptionInput.value = entry.title;
+
+        descriptionField.append(descriptionLabel, descriptionInput);
+
+        const startField = document.createElement("div");
+        startField.className = "inline-field";
+
+        const startLabel = document.createElement("label");
+        startLabel.className = "inline-label";
+        startLabel.textContent = "Início";
+
+        const startInput = document.createElement("input");
+        startInput.className = "inline-input";
+        startInput.type = "time";
+        startInput.value = inputTime(entry.startedAt);
+
+        startField.append(startLabel, startInput);
+
+        const endField = document.createElement("div");
+        endField.className = "inline-field";
+
+        const endLabel = document.createElement("label");
+        endLabel.className = "inline-label";
+        endLabel.textContent = "Fim";
+
+        const endInput = document.createElement("input");
+        endInput.className = "inline-input";
+        endInput.type = "time";
+        endInput.value = inputTime(entry.endedAt);
+
+        endField.append(endLabel, endInput);
+
+        const notesField = document.createElement("div");
+        notesField.className = "inline-field full";
+
+        const notesLabel = document.createElement("label");
+        notesLabel.className = "inline-label";
+        notesLabel.textContent = "Anotações";
+
+        const notesInput = document.createElement("textarea");
+        notesInput.className = "inline-textarea";
+        notesInput.maxLength = 12000;
+        notesInput.value = entry.notes || "";
+
+        notesField.append(notesLabel, notesInput);
+
+        grid.append(
+          descriptionField,
+          startField,
+          endField,
+          notesField
+        );
+
+        const error = document.createElement("div");
+        error.className = "inline-error";
+
+        const actions = document.createElement("div");
+        actions.className = "inline-actions";
+
+        const save = document.createElement("button");
+        save.type = "submit";
+        save.className = "inline-save";
+        save.textContent = "Salvar";
+
+        const cancel = document.createElement("button");
+        cancel.type = "button";
+        cancel.className = "inline-cancel";
+        cancel.textContent = "Cancelar";
+
+        cancel.addEventListener("click", () => {
+          editor.classList.remove("visible");
+          menuButton.setAttribute("aria-expanded", "false");
+        });
+
+        editor.addEventListener("submit", async event => {
+          event.preventDefault();
+
+          const title = descriptionInput.value.trim();
+          const startTime = startInput.value;
+          const endTime = endInput.value;
+
+          if (!title || !startTime || !endTime) {
+            error.textContent = "Preencha descrição, início e fim.";
+            return;
+          }
+
+          error.textContent = "";
+          save.disabled = true;
+          cancel.disabled = true;
+
+          try {
+            await api(`/api/entries/${encodeURIComponent(entry.id)}`, {
+              method: "PUT",
+              body: JSON.stringify({
+                title,
+                notes: notesInput.value,
+                day: dayKey(),
+                startTime,
+                endTime
+              })
+            });
+
+            await load();
+          } catch (apiError) {
+            error.textContent = apiError.message;
+            save.disabled = false;
+            cancel.disabled = false;
+          }
+        });
+
+        actions.append(save, cancel);
+        editor.append(grid, error, actions);
+
+        return editor;
+      }
+
       function renderTimeline() {
         timeline.innerHTML = "";
 
@@ -1107,11 +1514,23 @@
 
           meta.append(time, duration);
 
+          const titleRow = document.createElement("div");
+          titleRow.className = "timeline-title-row";
+
           const title = document.createElement("div");
           title.className = "timeline-title";
           title.textContent = entry.title;
 
-          item.append(dot, meta, title);
+          const menuButton = document.createElement("button");
+          menuButton.type = "button";
+          menuButton.className = "entry-menu";
+          menuButton.textContent = "···";
+          menuButton.title = "Editar registro";
+          menuButton.setAttribute("aria-label", "Editar registro");
+          menuButton.setAttribute("aria-expanded", "false");
+
+          titleRow.append(title, menuButton);
+          item.append(dot, meta, titleRow);
 
           if (entry.subtasks?.length) {
             const list = document.createElement("ul");
@@ -1157,15 +1576,25 @@
                   ? "Fechar anotações"
                   : "Anotações";
 
-              toggle.setAttribute(
-                "aria-expanded",
-                String(open)
-              );
+              toggle.setAttribute("aria-expanded", String(open));
             });
 
             item.append(toggle, notesBox);
           }
 
+          const editor = makeEntryEditor(entry, item, menuButton);
+
+          menuButton.addEventListener("click", () => {
+            const open = editor.classList.toggle("visible");
+            menuButton.setAttribute("aria-expanded", String(open));
+
+            if (open) {
+              const input = editor.querySelector(".inline-input");
+              if (input) input.focus();
+            }
+          });
+
+          item.appendChild(editor);
           timeline.appendChild(item);
         });
 
@@ -1458,6 +1887,68 @@
 
         await saveSubtasks(next);
         subtaskInput.focus();
+      });
+
+      function closeManualForm() {
+        manualForm.classList.remove("visible");
+        manualToggleButton.setAttribute("aria-expanded", "false");
+        manualError.textContent = "";
+      }
+
+      manualToggleButton.addEventListener("click", () => {
+        const open = manualForm.classList.toggle("visible");
+        manualToggleButton.setAttribute("aria-expanded", String(open));
+
+        if (open) {
+          manualError.textContent = "";
+          manualTitle.focus();
+        }
+      });
+
+      manualCancelButton.addEventListener("click", () => {
+        closeManualForm();
+      });
+
+      manualForm.addEventListener("submit", async event => {
+        event.preventDefault();
+
+        const title = manualTitle.value.trim();
+        const startTime = manualStart.value;
+        const endTime = manualEnd.value;
+
+        if (!title || !startTime || !endTime) {
+          manualError.textContent =
+            "Preencha descrição, início e fim.";
+          return;
+        }
+
+        manualError.textContent = "";
+        setBusy(true);
+
+        try {
+          await api("/api/manual", {
+            method: "POST",
+            body: JSON.stringify({
+              title,
+              notes: manualNotes.value,
+              day: dayKey(),
+              startTime,
+              endTime
+            })
+          });
+
+          manualTitle.value = "";
+          manualStart.value = "";
+          manualEnd.value = "";
+          manualNotes.value = "";
+          closeManualForm();
+
+          await load();
+        } catch (error) {
+          manualError.textContent = error.message;
+        } finally {
+          setBusy(false);
+        }
       });
 
       exportPdfButton.addEventListener("click", () => {

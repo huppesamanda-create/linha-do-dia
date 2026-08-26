@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#050505" />
+  <title>ENAM 2026.2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="loginScreen" class="login-screen hidden">
+    <form id="loginForm" class="login-card">
+      <div class="date">Área privada</div>
+      <h1>ENAM 2026.2</h1>
+      <p>Preparação objetiva, sem ruído.</p>
+      <label>Senha<input id="loginPassword" type="password" autocomplete="current-password" required /></label>
+      <button class="button primary wide" type="submit">Entrar</button>
+      <small id="loginError"></small>
+    </form>
+  </div>
+
+  <div id="app" class="app-shell hidden">
+    <header class="portal-header">
+      <div class="portal-brand">
+        <div class="date">Exame Nacional da Magistratura</div>
+        <h1>ENAM 2026.2</h1>
+      </div>
+
+      <div class="portal-header-right">
+        <div id="countdown" class="countdown"></div>
+        <button id="timerPill" class="timer-pill hidden">
+          <span class="timer-dot"></span>
+          <strong id="timerPillClock">50:00</strong>
+          <span id="timerPillSubject"></span>
+        </button>
+      </div>
+    </header>
+
+    <div class="portal-nav-wrap">
+      <button id="mobileMenu" class="icon-button mobile-only" aria-label="Abrir menu">☰</button>
+      <nav id="nav" class="portal-nav">
+        <button data-page="today" class="active">Hoje</button>
+        <button data-page="cycle">Ciclo</button>
+        <button data-page="syllabus">Edital</button>
+        <button data-page="questions">Questões</button>
+        <button data-page="laws">Lei seca</button>
+        <button data-page="review">Revisão</button>
+        <button data-page="performance">Desempenho</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <button data-page="settings">Ajustes</button>
+        <span id="saveStatus" class="save-status">salvo</span>
+      </div>
+    </div>
+
+    <div class="topbar">
+      <div id="pageTitle" class="top-title">Hoje</div>
+    </div>
+
+    <main id="main"></main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <div id="modalRoot"></div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,8 +1,8 @@
 {
   "name": "linha-do-dia",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "private": true,
-  "description": "Linha do Dia - cronometro, planejamento e historico diario com PostgreSQL.",
+  "description": "Linha do Dia com Portal ENAM 2026.2 e PostgreSQL.",
   "scripts": {
     "start": "node server.js"
   },

@@ -156,7 +156,15 @@ async function getActivity(id) {
 
 function safePublicPath(pathname) {
   const clean = decodeURIComponent(pathname || "/");
-  const requested = clean === "/" ? "index.html" : clean.replace(/^\/+/, "");
+
+  let requested = clean === "/"
+    ? "index.html"
+    : clean.replace(/^\/+/, "");
+
+  if (requested.endsWith("/")) {
+    requested += "index.html";
+  }
+
   const resolved = path.normalize(path.join(PUBLIC_DIR, requested));
 
   if (!resolved.startsWith(PUBLIC_DIR)) {
@@ -298,6 +306,60 @@ async function generatePdf(res, day) {
 }
 
 async function handleApi(req, res, url) {
+  if (req.method === "GET" && url.pathname === "/api/enam/meta") {
+    sendJson(res, 200, {
+      authenticated: true,
+      persistence: "database",
+      authRequired: false
+    });
+    return true;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/enam/state") {
+    const result = await pool.query(
+      `SELECT state
+         FROM ld4_enam_state
+        WHERE id = 'main'
+        LIMIT 1`
+    );
+
+    sendJson(
+      res,
+      200,
+      result.rows[0]?.state && typeof result.rows[0].state === "object"
+        ? result.rows[0].state
+        : {}
+    );
+    return true;
+  }
+
+  if (req.method === "PUT" && url.pathname === "/api/enam/state") {
+    const state = await readJson(req);
+
+    if (!state || typeof state !== "object" || Array.isArray(state)) {
+      sendJson(res, 400, { error: "Estado do ENAM inválido." });
+      return true;
+    }
+
+    await pool.query(
+      `INSERT INTO ld4_enam_state (id, state, updated_at)
+       VALUES ('main', $1::jsonb, NOW())
+       ON CONFLICT (id)
+       DO UPDATE
+          SET state = EXCLUDED.state,
+              updated_at = NOW()`,
+      [JSON.stringify(state)]
+    );
+
+    sendJson(res, 200, state);
+    return true;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/enam/login") {
+    sendJson(res, 200, { ok: true });
+    return true;
+  }
+
   if (req.method === "GET" && url.pathname === "/api/health") {
     await pool.query("SELECT 1");
     sendJson(res, 200, { ok: true });
@@ -813,6 +875,15 @@ async function handleApi(req, res, url) {
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+
+    if (url.pathname === "/enam") {
+      res.writeHead(308, {
+        "Location": "/enam/",
+        "Cache-Control": "no-store"
+      });
+      res.end();
+      return;
+    }
 
     if (url.pathname.startsWith("/api/")) {
       const handled = await handleApi(req, res, url);

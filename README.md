@@ -1,31 +1,25 @@
-# Linha do Dia v4 — versão estável reescrita
+# Linha do Dia v4.1 + Portal ENAM
 
-Esta versão foi reescrita do zero e usa tabelas novas no PostgreSQL:
+Pacote completo com duas áreas:
+
+- `/` → Linha do Dia
+- `/enam/` → Portal ENAM 2026.2
+
+A rota `/enam` redireciona automaticamente para `/enam/`.
+
+## PostgreSQL
+
+Esta versão usa:
 
 - `ld4_activities`
 - `ld4_plans`
+- `ld4_enam_state`
 
-Ela não depende das tabelas criadas pelas versões anteriores.
-
-## Recursos
-
-- cronômetro;
-- tempo visível no título da aba;
-- modo foco quando há atividade em andamento;
-- descrição e anotações;
-- anotações salvas automaticamente;
-- checklist;
-- linha do tempo em ordem cronológica;
-- edição de registros pelo botão `···`;
-- reabrir atividade concluída;
-- lançamento manual;
-- planejamento de amanhã;
-- iniciar atividade planejada;
-- exportar PDF do dia.
+O progresso do Portal ENAM é salvo em `ld4_enam_state` como JSONB.
 
 ## Instalação
 
-Substitua TODO o conteúdo do repositório pelos arquivos deste pacote.
+Substitua TODO o conteúdo do repositório pelo conteúdo deste pacote.
 
 Estrutura:
 
@@ -37,13 +31,14 @@ Estrutura:
 ├── schema.sql
 ├── server.js
 └── public/
-    └── index.html
+    ├── index.html
+    └── enam/
+        └── index.html
 ```
 
-No Railway, mantenha apenas:
-
+No Railway, mantenha:
 1. o serviço Node conectado ao GitHub;
 2. o PostgreSQL;
-3. `DATABASE_URL` no serviço Node apontando para o Postgres.
+3. a `DATABASE_URL` da aplicação apontando para o PostgreSQL.
 
-Não é preciso executar SQL manualmente. As tabelas novas são criadas automaticamente.
+Não é necessário executar SQL manualmente.

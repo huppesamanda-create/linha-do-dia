@@ -30,3 +30,9 @@ CREATE INDEX IF NOT EXISTS ld4_activities_started_idx
 
 CREATE INDEX IF NOT EXISTS ld4_plans_date_idx
   ON ld4_plans(planned_date, created_at);
+
+CREATE TABLE IF NOT EXISTS ld4_enam_state (
+  id TEXT PRIMARY KEY,
+  state JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

@@ -82,6 +82,25 @@
       font-weight: 600;
     }
 
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .enam-link {
+      color: #4f4f4f;
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .03em;
+      transition: color .15s ease;
+    }
+
+    .enam-link:hover {
+      color: #a0a0a0;
+    }
+
     .status {
       display: none;
       margin-bottom: 24px;
@@ -677,7 +696,10 @@
         <div class="date" id="dateLabel"></div>
         <h1>Linha do Dia</h1>
       </div>
-      <div class="day-total" id="dayTotal">Carregando...</div>
+      <div class="topbar-right">
+        <a class="enam-link" href="/enam/">ENAM</a>
+        <div class="day-total" id="dayTotal">Carregando...</div>
+      </div>
     </header>
 
     <div class="status" id="status"></div>

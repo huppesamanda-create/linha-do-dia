@@ -420,6 +420,193 @@
       min-width: 0;
     }
 
+    .day-heading {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .day-arrow {
+      width: 20px;
+      height: 24px;
+      border: 0;
+      background: transparent;
+      color: #393939;
+      padding: 0;
+      font-size: 18px;
+      font-weight: 400;
+      line-height: 1;
+      transition: color 0.15s ease;
+    }
+
+    .day-arrow:hover,
+    .day-arrow:focus-visible {
+      color: #a3a3a3;
+      outline: none;
+    }
+
+    .day-arrow.hidden {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .planned-section {
+      display: none;
+      margin: 0 0 30px;
+      padding: 0 0 24px;
+      border-bottom: 1px solid #151515;
+    }
+
+    .planned-section.visible {
+      display: block;
+    }
+
+    .planned-heading {
+      margin-bottom: 14px;
+      color: #4d4d4d;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .planned-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .planned-item {
+      display: grid;
+      grid-template-columns: 16px minmax(0, 1fr);
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid #101010;
+    }
+
+    .planned-item:last-child {
+      border-bottom: 0;
+    }
+
+    .planned-marker {
+      padding-top: 5px;
+      color: #555555;
+      font-size: 11px;
+      line-height: 1;
+    }
+
+    .planned-main {
+      min-width: 0;
+    }
+
+    .planned-title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .planned-title {
+      min-width: 0;
+      flex: 1;
+      color: #b9b9b9;
+      font-size: 14px;
+      font-weight: 650;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .planned-actions {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      flex: 0 0 auto;
+    }
+
+    .plan-start,
+    .plan-menu {
+      width: 27px;
+      height: 27px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #353535;
+      padding: 0;
+      line-height: 1;
+      transition: color 0.15s ease, background 0.15s ease;
+    }
+
+    .plan-start {
+      font-size: 11px;
+    }
+
+    .plan-menu {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .plan-start:hover,
+    .plan-menu:hover,
+    .plan-start:focus-visible,
+    .plan-menu:focus-visible {
+      background: #0d0d0d;
+      color: #888888;
+      outline: none;
+    }
+
+    .plan-notes {
+      display: none;
+      margin-top: 7px;
+      padding-left: 10px;
+      border-left: 1px solid #292929;
+      color: #737373;
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .plan-notes.visible {
+      display: block;
+    }
+
+    .plan-notes-toggle {
+      min-height: 27px;
+      margin-top: 5px;
+      border: 0;
+      background: transparent;
+      color: #505050;
+      padding: 0;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .plan-editor {
+      display: none;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #151515;
+    }
+
+    .plan-editor.visible {
+      display: block;
+    }
+
+    .inline-delete {
+      min-height: 34px;
+      margin-left: auto;
+      border: 0;
+      background: transparent;
+      color: #4b3c3c;
+      padding: 0 4px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .inline-delete:hover {
+      color: #a56e6e;
+    }
+
     .timeline-header h2 {
       margin: 0;
       color: var(--text-strong);
@@ -957,7 +1144,26 @@
       <section class="timeline-panel" aria-label="Linha do tempo do dia">
         <div class="timeline-header">
           <div class="timeline-header-main">
-            <h2>Hoje</h2>
+            <h2 class="day-heading">
+              <button
+                class="day-arrow hidden"
+                id="prevDayButton"
+                type="button"
+                aria-label="Voltar para hoje"
+                title="Hoje"
+              >‹</button>
+
+              <span id="dayHeadingLabel">Hoje</span>
+
+              <button
+                class="day-arrow"
+                id="nextDayButton"
+                type="button"
+                aria-label="Ver amanhã"
+                title="Amanhã"
+              >›</button>
+            </h2>
+
             <span class="summary" id="summary">Carregando...</span>
           </div>
 
@@ -1025,6 +1231,46 @@
           </div>
         </form>
 
+        <form class="inline-panel" id="planForm">
+          <div class="inline-panel-title">Planejar amanhã</div>
+
+          <div class="inline-grid">
+            <div class="inline-field full">
+              <label class="inline-label" for="planTitle">Descrição</label>
+              <input
+                class="inline-input"
+                id="planTitle"
+                type="text"
+                maxlength="500"
+                autocomplete="off"
+                placeholder="O que você quer fazer amanhã?"
+              >
+            </div>
+
+            <div class="inline-field full">
+              <label class="inline-label" for="planNotes">Anotações</label>
+              <textarea
+                class="inline-textarea"
+                id="planNotes"
+                maxlength="12000"
+                placeholder="Opcional"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="inline-error" id="planError" aria-live="polite"></div>
+
+          <div class="inline-actions">
+            <button class="inline-save" type="submit">Salvar</button>
+            <button class="inline-cancel" id="planCancelButton" type="button">Cancelar</button>
+          </div>
+        </form>
+
+        <section class="planned-section" id="plannedSection">
+          <div class="planned-heading">Planejado</div>
+          <ul class="planned-list" id="plannedList"></ul>
+        </section>
+
         <div class="empty" id="emptyState">
           Conforme você conclui cada bloco, ele aparece aqui em ordem cronológica,
           com o horário, o tempo gasto e o checklist.
@@ -1086,8 +1332,22 @@
       const manualError = $("#manualError");
       const manualCancelButton = $("#manualCancelButton");
 
+      const dayHeadingLabel = $("#dayHeadingLabel");
+      const prevDayButton = $("#prevDayButton");
+      const nextDayButton = $("#nextDayButton");
+
+      const planForm = $("#planForm");
+      const planTitle = $("#planTitle");
+      const planNotes = $("#planNotes");
+      const planError = $("#planError");
+      const planCancelButton = $("#planCancelButton");
+      const plannedSection = $("#plannedSection");
+      const plannedList = $("#plannedList");
+
       let active = null;
       let entries = [];
+      let plans = [];
+      let viewOffset = 0;
       let timerInterval = null;
       let busy = false;
 
@@ -1095,14 +1355,24 @@
       let notesSavePromise = null;
       let lastSavedNotes = "";
 
-      function dayKey() {
+      function dateKeyFromOffset(offset = 0) {
         const date = new Date();
+        date.setHours(12, 0, 0, 0);
+        date.setDate(date.getDate() + offset);
 
         return [
           date.getFullYear(),
           String(date.getMonth() + 1).padStart(2, "0"),
           String(date.getDate()).padStart(2, "0")
         ].join("-");
+      }
+
+      function dayKey() {
+        return dateKeyFromOffset(0);
+      }
+
+      function viewDayKey() {
+        return dateKeyFromOffset(viewOffset);
       }
 
       function inputTime(value) {
@@ -1211,8 +1481,40 @@
         renderControls();
       }
 
+      function formatTabTimer(milliseconds) {
+        const total = Math.max(0, Math.floor(milliseconds / 1000));
+        const hours = Math.floor(total / 3600);
+        const minutes = Math.floor((total % 3600) / 60);
+        const seconds = total % 60;
+
+        if (hours > 0) {
+          return [hours, minutes, seconds]
+            .map(value => String(value).padStart(2, "0"))
+            .join(":");
+        }
+
+        return [minutes, seconds]
+          .map(value => String(value).padStart(2, "0"))
+          .join(":");
+      }
+
+      function renderBrowserTitle() {
+        if (!active) {
+          document.title = "Linha do Dia";
+          return;
+        }
+
+        const time = formatTabTimer(elapsed());
+
+        document.title =
+          active.status === "paused"
+            ? `⏸ ${time} · Linha do Dia`
+            : `${time} · Linha do Dia`;
+      }
+
       function renderTimer() {
         timerEl.textContent = formatTimer(elapsed());
+        renderBrowserTitle();
       }
 
       function startTick() {
@@ -1246,6 +1548,8 @@
       }
 
       function renderActive() {
+        renderBrowserTitle();
+
         if (!active) {
           activeCard.classList.remove("visible");
           activityDescription.value = "";
@@ -1453,7 +1757,7 @@
               body: JSON.stringify({
                 title,
                 notes: notesInput.value,
-                day: dayKey(),
+                day: viewDayKey(),
                 startTime,
                 endTime
               })
@@ -1473,11 +1777,302 @@
         return editor;
       }
 
+      function makePlanEditor(plan, menuButton) {
+        const editor = document.createElement("form");
+        editor.className = "plan-editor";
+
+        const grid = document.createElement("div");
+        grid.className = "inline-grid";
+
+        const titleField = document.createElement("div");
+        titleField.className = "inline-field full";
+
+        const titleLabel = document.createElement("label");
+        titleLabel.className = "inline-label";
+        titleLabel.textContent = "Descrição";
+
+        const titleInput = document.createElement("input");
+        titleInput.className = "inline-input";
+        titleInput.type = "text";
+        titleInput.maxLength = 500;
+        titleInput.value = plan.title;
+
+        titleField.append(titleLabel, titleInput);
+
+        const notesField = document.createElement("div");
+        notesField.className = "inline-field full";
+
+        const notesLabel = document.createElement("label");
+        notesLabel.className = "inline-label";
+        notesLabel.textContent = "Anotações";
+
+        const notesInput = document.createElement("textarea");
+        notesInput.className = "inline-textarea";
+        notesInput.maxLength = 12000;
+        notesInput.value = plan.notes || "";
+
+        notesField.append(notesLabel, notesInput);
+        grid.append(titleField, notesField);
+
+        const error = document.createElement("div");
+        error.className = "inline-error";
+
+        const actions = document.createElement("div");
+        actions.className = "inline-actions";
+
+        const save = document.createElement("button");
+        save.type = "submit";
+        save.className = "inline-save";
+        save.textContent = "Salvar";
+
+        const cancel = document.createElement("button");
+        cancel.type = "button";
+        cancel.className = "inline-cancel";
+        cancel.textContent = "Cancelar";
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "inline-delete";
+        remove.textContent = "Excluir";
+
+        cancel.addEventListener("click", () => {
+          editor.classList.remove("visible");
+          menuButton.setAttribute("aria-expanded", "false");
+        });
+
+        remove.addEventListener("click", async () => {
+          const confirmed = window.confirm(
+            "Excluir esta atividade planejada?"
+          );
+
+          if (!confirmed) {
+            return;
+          }
+
+          remove.disabled = true;
+
+          try {
+            await api(`/api/plans/${encodeURIComponent(plan.id)}`, {
+              method: "DELETE"
+            });
+
+            await load();
+          } catch (errorValue) {
+            error.textContent = errorValue.message;
+            remove.disabled = false;
+          }
+        });
+
+        editor.addEventListener("submit", async event => {
+          event.preventDefault();
+
+          const title = titleInput.value.trim();
+
+          if (!title) {
+            error.textContent = "Informe a descrição.";
+            return;
+          }
+
+          error.textContent = "";
+          save.disabled = true;
+          cancel.disabled = true;
+          remove.disabled = true;
+
+          try {
+            await api(`/api/plans/${encodeURIComponent(plan.id)}`, {
+              method: "PUT",
+              body: JSON.stringify({
+                title,
+                notes: notesInput.value
+              })
+            });
+
+            await load();
+          } catch (errorValue) {
+            error.textContent = errorValue.message;
+            save.disabled = false;
+            cancel.disabled = false;
+            remove.disabled = false;
+          }
+        });
+
+        actions.append(save, cancel, remove);
+        editor.append(grid, error, actions);
+
+        return editor;
+      }
+
+      function renderPlans() {
+        plannedList.innerHTML = "";
+
+        if (!plans.length) {
+          plannedSection.classList.remove("visible");
+          return;
+        }
+
+        plannedSection.classList.add("visible");
+
+        plans.forEach(plan => {
+          const item = document.createElement("li");
+          item.className = "planned-item";
+
+          const marker = document.createElement("span");
+          marker.className = "planned-marker";
+          marker.textContent = "○";
+
+          const main = document.createElement("div");
+          main.className = "planned-main";
+
+          const titleRow = document.createElement("div");
+          titleRow.className = "planned-title-row";
+
+          const title = document.createElement("div");
+          title.className = "planned-title";
+          title.textContent = plan.title;
+
+          const actions = document.createElement("div");
+          actions.className = "planned-actions";
+
+          if (viewOffset === 0) {
+            const start = document.createElement("button");
+            start.type = "button";
+            start.className = "plan-start";
+            start.textContent = "▶";
+            start.title = "Iniciar";
+            start.setAttribute("aria-label", `Iniciar ${plan.title}`);
+
+            start.addEventListener("click", async () => {
+              if (busy) {
+                return;
+              }
+
+              setBusy(true);
+              setStatus("");
+
+              try {
+                const data = await api(
+                  `/api/plans/${encodeURIComponent(plan.id)}/start`,
+                  { method: "POST" }
+                );
+
+                active = data.active;
+                await load();
+              } catch (errorValue) {
+                setStatus(errorValue.message);
+              } finally {
+                setBusy(false);
+              }
+            });
+
+            actions.appendChild(start);
+          }
+
+          const menu = document.createElement("button");
+          menu.type = "button";
+          menu.className = "plan-menu";
+          menu.textContent = "···";
+          menu.title = "Editar planejamento";
+          menu.setAttribute("aria-label", "Editar planejamento");
+          menu.setAttribute("aria-expanded", "false");
+
+          actions.appendChild(menu);
+          titleRow.append(title, actions);
+          main.appendChild(titleRow);
+
+          const notes = String(plan.notes || "").trim();
+
+          if (notes) {
+            const notesToggle = document.createElement("button");
+            notesToggle.type = "button";
+            notesToggle.className = "plan-notes-toggle";
+            notesToggle.textContent = "Anotações";
+
+            const notesBox = document.createElement("div");
+            notesBox.className = "plan-notes";
+            notesBox.textContent = notes;
+
+            notesToggle.addEventListener("click", () => {
+              const open = notesBox.classList.toggle("visible");
+              notesToggle.textContent = open
+                ? "Fechar anotações"
+                : "Anotações";
+            });
+
+            main.append(notesToggle, notesBox);
+          }
+
+          const editor = makePlanEditor(plan, menu);
+
+          menu.addEventListener("click", () => {
+            const open = editor.classList.toggle("visible");
+            menu.setAttribute("aria-expanded", String(open));
+
+            if (open) {
+              const input = editor.querySelector(".inline-input");
+              if (input) input.focus();
+            }
+          });
+
+          main.appendChild(editor);
+          item.append(marker, main);
+          plannedList.appendChild(item);
+        });
+      }
+
+      function renderDayHeader() {
+        const tomorrow = viewOffset === 1;
+
+        dayHeadingLabel.textContent = tomorrow ? "Amanhã" : "Hoje";
+        prevDayButton.classList.toggle("hidden", !tomorrow);
+        nextDayButton.classList.toggle("hidden", tomorrow);
+
+        manualToggleButton.title = tomorrow
+          ? "Planejar atividade"
+          : "Lançamento manual";
+
+        manualToggleButton.setAttribute(
+          "aria-label",
+          tomorrow
+            ? "Planejar atividade para amanhã"
+            : "Novo lançamento manual"
+        );
+
+        exportPdfButton.style.display = tomorrow ? "none" : "";
+      }
+
       function renderTimeline() {
         timeline.innerHTML = "";
+        renderDayHeader();
+        renderPlans();
+
+        if (viewOffset === 1) {
+          timeline.style.display = "none";
+          clearDayButton.style.display = "none";
+          exportPdfButton.disabled = true;
+
+          if (!plans.length) {
+            emptyState.style.display = "block";
+            emptyState.textContent =
+              "Nenhuma atividade planejada para amanhã.";
+          } else {
+            emptyState.style.display = "none";
+          }
+
+          summary.textContent =
+            `${plans.length} ${plans.length === 1 ? "atividade planejada" : "atividades planejadas"}`;
+
+          dayTotal.textContent =
+            `${plans.length} ${plans.length === 1 ? "atividade planejada" : "atividades planejadas"} para amanhã`;
+
+          return;
+        }
+
+        timeline.style.display = "";
 
         if (!entries.length) {
-          emptyState.style.display = "block";
+          emptyState.style.display = plans.length ? "none" : "block";
+          emptyState.textContent =
+            "Conforme você conclui cada bloco, ele aparece aqui em ordem cronológica, com o horário, o tempo gasto e o checklist.";
           summary.textContent = "Nenhum registro";
           dayTotal.textContent = "0 min registrados hoje";
           clearDayButton.style.display = "none";
@@ -1617,11 +2212,12 @@
 
         try {
           const data = await api(
-            `/api/state?day=${encodeURIComponent(dayKey())}`
+            `/api/state?day=${encodeURIComponent(viewDayKey())}`
           );
 
           active = data.active || null;
           entries = data.entries || [];
+          plans = data.plans || [];
           lastSavedNotes = active?.notes || "";
 
           renderAll();
@@ -1889,19 +2485,40 @@
         subtaskInput.focus();
       });
 
-      function closeManualForm() {
+      function closeInlineForms() {
         manualForm.classList.remove("visible");
+        planForm.classList.remove("visible");
         manualToggleButton.setAttribute("aria-expanded", "false");
         manualError.textContent = "";
+        planError.textContent = "";
+      }
+
+      function closeManualForm() {
+        closeInlineForms();
       }
 
       manualToggleButton.addEventListener("click", () => {
-        const open = manualForm.classList.toggle("visible");
+        const target = viewOffset === 1
+          ? planForm
+          : manualForm;
+
+        const other = viewOffset === 1
+          ? manualForm
+          : planForm;
+
+        other.classList.remove("visible");
+
+        const open = target.classList.toggle("visible");
         manualToggleButton.setAttribute("aria-expanded", String(open));
 
         if (open) {
-          manualError.textContent = "";
-          manualTitle.focus();
+          if (viewOffset === 1) {
+            planError.textContent = "";
+            planTitle.focus();
+          } else {
+            manualError.textContent = "";
+            manualTitle.focus();
+          }
         }
       });
 
@@ -1951,6 +2568,57 @@
         }
       });
 
+      planCancelButton.addEventListener("click", () => {
+        closeInlineForms();
+      });
+
+      planForm.addEventListener("submit", async event => {
+        event.preventDefault();
+
+        const title = planTitle.value.trim();
+
+        if (!title) {
+          planError.textContent = "Informe a atividade.";
+          return;
+        }
+
+        planError.textContent = "";
+        setBusy(true);
+
+        try {
+          await api("/api/plans", {
+            method: "POST",
+            body: JSON.stringify({
+              title,
+              notes: planNotes.value,
+              day: viewDayKey()
+            })
+          });
+
+          planTitle.value = "";
+          planNotes.value = "";
+          closeInlineForms();
+
+          await load();
+        } catch (errorValue) {
+          planError.textContent = errorValue.message;
+        } finally {
+          setBusy(false);
+        }
+      });
+
+      prevDayButton.addEventListener("click", async () => {
+        viewOffset = 0;
+        closeInlineForms();
+        await load();
+      });
+
+      nextDayButton.addEventListener("click", async () => {
+        viewOffset = 1;
+        closeInlineForms();
+        await load();
+      });
+
       exportPdfButton.addEventListener("click", () => {
         if (!entries.length) {
           return;
@@ -1961,7 +2629,7 @@
       });
 
       clearDayButton.addEventListener("click", async () => {
-        if (!entries.length || busy) {
+        if (viewOffset !== 0 || !entries.length || busy) {
           return;
         }
 

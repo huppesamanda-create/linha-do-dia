@@ -1,8 +1,8 @@
 {
   "name": "linha-do-dia",
-  "version": "4.1.0",
+  "version": "4.2.0",
   "private": true,
-  "description": "Linha do Dia com Portal ENAM 2026.2 e PostgreSQL.",
+  "description": "Linha do Dia com Portal ENAM e módulo Financeiro anual.",
   "scripts": {
     "start": "node server.js"
   },

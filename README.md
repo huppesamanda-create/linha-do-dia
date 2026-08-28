@@ -1,44 +1,32 @@
-# Linha do Dia v4.1 + Portal ENAM
+# Linha do Dia v4.2 — ENAM + Financeiro
 
-Pacote completo com duas áreas:
+Pacote completo para substituir o conteúdo do repositório.
 
-- `/` → Linha do Dia
-- `/enam/` → Portal ENAM 2026.2
+## Rotas
 
-A rota `/enam` redireciona automaticamente para `/enam/`.
+- `/` — Linha do Dia
+- `/enam/` — Portal ENAM 2026.2
+- `/financeiro/` — Fluxo de caixa anual
 
-## PostgreSQL
+## Financeiro
 
-Esta versão usa:
-
-- `ld4_activities`
-- `ld4_plans`
-- `ld4_enam_state`
-
-O progresso do Portal ENAM é salvo em `ld4_enam_state` como JSONB.
+- visão anual dos 12 meses com rolagem horizontal;
+- colunas Data, Entrada, Saída, Diário e Saldo;
+- lançamentos realizados e provisionados;
+- categoria obrigatória para gastos;
+- orçamento mensal por categoria;
+- saldo real e saldo projetado;
+- saldo inicial do ano editável;
+- limite amarelo editável;
+- simulação diretamente nas células de Saída/Diário;
+- impacto da simulação recalculado do dia até dezembro;
+- amarelo para saldo apertado e vermelho para saldo negativo;
+- simulação pode ser descartada ou transformada em provisionado;
+- edição e exclusão de lançamentos;
+- dados persistidos no PostgreSQL.
 
 ## Instalação
 
-Substitua TODO o conteúdo do repositório pelo conteúdo deste pacote.
+Substitua todo o conteúdo do GitHub pelo conteúdo deste ZIP. Não exclua o PostgreSQL e não altere a `DATABASE_URL`.
 
-Estrutura:
-
-```text
-/
-├── .gitignore
-├── package.json
-├── db.js
-├── schema.sql
-├── server.js
-└── public/
-    ├── index.html
-    └── enam/
-        └── index.html
-```
-
-No Railway, mantenha:
-1. o serviço Node conectado ao GitHub;
-2. o PostgreSQL;
-3. a `DATABASE_URL` da aplicação apontando para o PostgreSQL.
-
-Não é necessário executar SQL manualmente.
+O `schema.sql` cria automaticamente as novas tabelas financeiras sem apagar Linha do Dia ou ENAM.

@@ -78,6 +78,37 @@ function cleanNotes(value) {
   return String(value || "").slice(0, 12000);
 }
 
+function validFinanceYear(value) {
+  const year = Number(value);
+  return Number.isInteger(year) && year >= 2000 && year <= 2100;
+}
+
+function validFinanceMonth(value) {
+  const month = Number(value);
+  return Number.isInteger(month) && month >= 1 && month <= 12;
+}
+
+function validFinanceDate(year, month, day) {
+  year = Number(year);
+  month = Number(month);
+  day = Number(day);
+
+  if (!validFinanceYear(year) || !validFinanceMonth(month) || !Number.isInteger(day) || day < 1 || day > 31) {
+    return false;
+  }
+
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+
+function financeDateKey(year, month, day) {
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function cleanFinanceDescription(value) {
+  return String(value || "").trim().slice(0, 500);
+}
+
 function cleanSubtasks(value) {
   if (!Array.isArray(value)) {
     throw new Error("Checklist inválido.");
@@ -356,6 +387,246 @@ async function handleApi(req, res, url) {
   }
 
   if (req.method === "POST" && url.pathname === "/api/enam/login") {
+    sendJson(res, 200, { ok: true });
+    return true;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/finance/state") {
+    const year = Number(url.searchParams.get("year"));
+
+    if (!validFinanceYear(year)) {
+      sendJson(res, 400, { error: "Ano inválido." });
+      return true;
+    }
+
+    const start = `${year}-01-01`;
+    const end = `${year + 1}-01-01`;
+
+    const [transactionsResult, categoriesResult, budgetsResult, yearResult] = await Promise.all([
+      pool.query(
+        `SELECT id, TO_CHAR(transaction_date, 'YYYY-MM-DD') AS transaction_date, type, nature, amount, category_id, status, description
+           FROM ld4_finance_transactions
+          WHERE transaction_date >= $1::date
+            AND transaction_date < $2::date
+          ORDER BY transaction_date ASC, created_at ASC`,
+        [start, end]
+      ),
+      pool.query(
+        `SELECT id, name, sort_order
+           FROM ld4_finance_categories
+          WHERE active = TRUE
+          ORDER BY sort_order ASC, name ASC`
+      ),
+      pool.query(
+        `SELECT year, month, category_id, amount
+           FROM ld4_finance_budgets
+          WHERE year = $1
+          ORDER BY month ASC, category_id ASC`,
+        [year]
+      ),
+      pool.query(
+        `SELECT year, opening_balance, warning_threshold
+           FROM ld4_finance_years
+          WHERE year = $1
+          LIMIT 1`,
+        [year]
+      )
+    ]);
+
+    const transactions = transactionsResult.rows.map(row => {
+      const date = String(row.transaction_date).slice(0, 10);
+      const [y, m, d] = date.split("-").map(Number);
+
+      return {
+        id: row.id,
+        year: y,
+        month: m - 1,
+        day: d,
+        type: row.type,
+        nature: row.nature,
+        value: Number(row.amount),
+        category: row.category_id,
+        status: row.status,
+        description: row.description || ""
+      };
+    });
+
+    sendJson(res, 200, {
+      year,
+      openingBalance: Number(yearResult.rows[0]?.opening_balance || 0),
+      warningThreshold: Number(yearResult.rows[0]?.warning_threshold || 1000),
+      categories: categoriesResult.rows.map(row => ({
+        id: row.id,
+        name: row.name,
+        sortOrder: Number(row.sort_order || 0)
+      })),
+      budgets: budgetsResult.rows.map(row => ({
+        year: Number(row.year),
+        month: Number(row.month) - 1,
+        category: row.category_id,
+        amount: Number(row.amount || 0)
+      })),
+      transactions
+    });
+    return true;
+  }
+
+  if (req.method === "PUT" && url.pathname === "/api/finance/year") {
+    const body = await readJson(req);
+    const year = Number(body.year);
+    const openingBalance = Number(body.openingBalance);
+    const warningThreshold = Number(body.warningThreshold);
+
+    if (!validFinanceYear(year) || !Number.isFinite(openingBalance) || !Number.isFinite(warningThreshold) || warningThreshold < 0) {
+      sendJson(res, 400, { error: "Configuração financeira inválida." });
+      return true;
+    }
+
+    const result = await pool.query(
+      `INSERT INTO ld4_finance_years (year, opening_balance, warning_threshold, updated_at)
+       VALUES ($1, $2, $3, NOW())
+       ON CONFLICT (year)
+       DO UPDATE SET
+         opening_balance = EXCLUDED.opening_balance,
+         warning_threshold = EXCLUDED.warning_threshold,
+         updated_at = NOW()
+       RETURNING year, opening_balance, warning_threshold`,
+      [year, openingBalance, warningThreshold]
+    );
+
+    sendJson(res, 200, {
+      year: Number(result.rows[0].year),
+      openingBalance: Number(result.rows[0].opening_balance),
+      warningThreshold: Number(result.rows[0].warning_threshold)
+    });
+    return true;
+  }
+
+  if (req.method === "PUT" && url.pathname === "/api/finance/budget") {
+    const body = await readJson(req);
+    const year = Number(body.year);
+    const month = Number(body.month) + 1;
+    const category = String(body.category || "");
+    const amount = Number(body.amount);
+
+    if (!validFinanceYear(year) || !validFinanceMonth(month) || !category || !Number.isFinite(amount) || amount < 0) {
+      sendJson(res, 400, { error: "Orçamento inválido." });
+      return true;
+    }
+
+    const result = await pool.query(
+      `INSERT INTO ld4_finance_budgets (year, month, category_id, amount, updated_at)
+       VALUES ($1, $2, $3, $4, NOW())
+       ON CONFLICT (year, month, category_id)
+       DO UPDATE SET amount = EXCLUDED.amount, updated_at = NOW()
+       RETURNING year, month, category_id, amount`,
+      [year, month, category, amount]
+    );
+
+    sendJson(res, 200, {
+      year: Number(result.rows[0].year),
+      month: Number(result.rows[0].month) - 1,
+      category: result.rows[0].category_id,
+      amount: Number(result.rows[0].amount)
+    });
+    return true;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/finance/transactions") {
+    const body = await readJson(req);
+    const year = Number(body.year);
+    const month = Number(body.month) + 1;
+    const day = Number(body.day);
+    const type = String(body.type || "");
+    const nature = type === "expense" ? String(body.nature || "") : null;
+    const amount = Number(body.value);
+    const category = type === "expense" ? String(body.category || "") : null;
+    const status = String(body.status || "");
+    const description = cleanFinanceDescription(body.description);
+
+    if (!validFinanceDate(year, month, day) || !["income", "expense"].includes(type) || !Number.isFinite(amount) || amount <= 0 || !["provisioned", "realized"].includes(status)) {
+      sendJson(res, 400, { error: "Lançamento inválido." });
+      return true;
+    }
+
+    if (type === "expense" && (!["fixed", "daily"].includes(nature) || !category)) {
+      sendJson(res, 400, { error: "Informe o tipo de saída e a categoria." });
+      return true;
+    }
+
+    const result = await pool.query(
+      `INSERT INTO ld4_finance_transactions
+        (id, transaction_date, type, nature, amount, category_id, status, description)
+       VALUES ($1, $2::date, $3, $4, $5, $6, $7, $8)
+       RETURNING id`,
+      [randomUUID(), financeDateKey(year, month, day), type, nature, amount, category, status, description]
+    );
+
+    sendJson(res, 201, { id: result.rows[0].id });
+    return true;
+  }
+
+  const financeTransactionMatch = url.pathname.match(/^\/api\/finance\/transactions\/([^/]+)$/);
+
+  if (req.method === "PUT" && financeTransactionMatch) {
+    const id = decodeURIComponent(financeTransactionMatch[1]);
+    const body = await readJson(req);
+    const year = Number(body.year);
+    const month = Number(body.month) + 1;
+    const day = Number(body.day);
+    const type = String(body.type || "");
+    const nature = type === "expense" ? String(body.nature || "") : null;
+    const amount = Number(body.value);
+    const category = type === "expense" ? String(body.category || "") : null;
+    const status = String(body.status || "");
+    const description = cleanFinanceDescription(body.description);
+
+    if (!validFinanceDate(year, month, day) || !["income", "expense"].includes(type) || !Number.isFinite(amount) || amount <= 0 || !["provisioned", "realized"].includes(status)) {
+      sendJson(res, 400, { error: "Lançamento inválido." });
+      return true;
+    }
+
+    if (type === "expense" && (!["fixed", "daily"].includes(nature) || !category)) {
+      sendJson(res, 400, { error: "Informe o tipo de saída e a categoria." });
+      return true;
+    }
+
+    const result = await pool.query(
+      `UPDATE ld4_finance_transactions
+          SET transaction_date = $2::date,
+              type = $3,
+              nature = $4,
+              amount = $5,
+              category_id = $6,
+              status = $7,
+              description = $8,
+              updated_at = NOW()
+        WHERE id = $1
+        RETURNING id`,
+      [id, financeDateKey(year, month, day), type, nature, amount, category, status, description]
+    );
+
+    if (!result.rows.length) {
+      sendJson(res, 404, { error: "Lançamento não encontrado." });
+      return true;
+    }
+
+    sendJson(res, 200, { id: result.rows[0].id });
+    return true;
+  }
+
+  if (req.method === "DELETE" && financeTransactionMatch) {
+    const id = decodeURIComponent(financeTransactionMatch[1]);
+    const result = await pool.query(
+      `DELETE FROM ld4_finance_transactions WHERE id = $1 RETURNING id`,
+      [id]
+    );
+
+    if (!result.rows.length) {
+      sendJson(res, 404, { error: "Lançamento não encontrado." });
+      return true;
+    }
+
     sendJson(res, 200, { ok: true });
     return true;
   }
@@ -879,6 +1150,15 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === "/enam") {
       res.writeHead(308, {
         "Location": "/enam/",
+        "Cache-Control": "no-store"
+      });
+      res.end();
+      return;
+    }
+
+    if (url.pathname === "/financeiro") {
+      res.writeHead(308, {
+        "Location": "/financeiro/",
         "Cache-Control": "no-store"
       });
       res.end();

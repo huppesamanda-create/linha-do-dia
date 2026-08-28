@@ -4,7 +4,7 @@ const path = require("path");
 const { randomUUID } = require("crypto");
 const { pool, initDatabase } = require("./db");
 
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT || 3000);
 const PUBLIC_DIR = path.join(__dirname, "public");
 const TIME_ZONE = "America/Sao_Paulo";
 
@@ -21,10 +21,13 @@ const MIME_TYPES = {
 };
 
 function sendJson(res, status, data) {
+  if (res.headersSent) return;
+
   res.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store"
   });
+
   res.end(JSON.stringify(data));
 }
 
@@ -36,7 +39,7 @@ function readJson(req) {
       body += chunk;
 
       if (body.length > 1_000_000) {
-        reject(new Error("Corpo da requisição muito grande."));
+        reject(new Error("Requisição muito grande."));
         req.destroy();
       }
     });
@@ -55,6 +58,47 @@ function readJson(req) {
     });
 
     req.on("error", reject);
+  });
+}
+
+function validDay(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(value || ""));
+}
+
+function validIsoDate(value) {
+  const parsed = new Date(value);
+  return Boolean(value) && Number.isFinite(parsed.getTime());
+}
+
+function cleanTitle(value) {
+  return String(value || "").trim().slice(0, 500);
+}
+
+function cleanNotes(value) {
+  return String(value || "").slice(0, 12000);
+}
+
+function cleanSubtasks(value) {
+  if (!Array.isArray(value)) {
+    throw new Error("Checklist inválido.");
+  }
+
+  if (value.length > 100) {
+    throw new Error("Limite de 100 subatividades.");
+  }
+
+  return value.map(item => {
+    const text = String(item?.text || "").trim().slice(0, 180);
+
+    if (!text) {
+      throw new Error("Subatividade vazia.");
+    }
+
+    return {
+      id: String(item?.id || randomUUID()).slice(0, 100),
+      text,
+      done: Boolean(item?.done)
+    };
   });
 }
 
@@ -80,85 +124,29 @@ function mapPlan(row) {
 
   return {
     id: row.id,
-    day: typeof row.planned_date === "string"
-      ? row.planned_date
-      : new Intl.DateTimeFormat("en-CA", {
-          timeZone: TIME_ZONE,
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit"
-        }).format(new Date(row.planned_date)),
+    day: String(row.planned_date),
     title: row.title,
     notes: row.notes || ""
   };
 }
 
-function validDateKey(value) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value || "");
-}
-
-function currentDateKey() {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  }).formatToParts(new Date());
-
-  const values = {};
-
-  parts.forEach(part => {
-    if (part.type !== "literal") {
-      values[part.type] = part.value;
-    }
-  });
-
-  return `${values.year}-${values.month}-${values.day}`;
-}
-
-function validTime(value) {
-  return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value || "");
-}
-
-function timeToMinutes(value) {
-  const [hours, minutes] = value.split(":").map(Number);
-  return (hours * 60) + minutes;
-}
-
-function sanitizeNotes(value) {
-  return String(value || "").slice(0, 12000);
-}
-
-function sanitizeSubtasks(value) {
-  if (!Array.isArray(value)) {
-    throw new Error("Checklist inválido.");
-  }
-
-  if (value.length > 100) {
-    throw new Error("Limite de 100 subatividades por bloco.");
-  }
-
-  return value.map(item => {
-    const text = String(item?.text || "").trim().slice(0, 180);
-
-    if (!text) {
-      throw new Error("Subatividade vazia.");
-    }
-
-    return {
-      id: String(item?.id || randomUUID()).slice(0, 100),
-      text,
-      done: Boolean(item?.done)
-    };
-  });
-}
-
-async function getActivityById(id) {
+async function getActive() {
   const result = await pool.query(
-    `SELECT a.*, COALESCE(n.notes, '') AS notes
-       FROM activities a
-       LEFT JOIN activity_notes n ON n.activity_id = a.id
-      WHERE a.id = $1
+    `SELECT *
+       FROM ld4_activities
+      WHERE status IN ('active', 'paused')
+      ORDER BY started_at DESC
+      LIMIT 1`
+  );
+
+  return result.rows[0] || null;
+}
+
+async function getActivity(id) {
+  const result = await pool.query(
+    `SELECT *
+       FROM ld4_activities
+      WHERE id = $1
       LIMIT 1`,
     [id]
   );
@@ -166,33 +154,19 @@ async function getActivityById(id) {
   return result.rows[0] || null;
 }
 
-async function getActive() {
-  const result = await pool.query(
-    `SELECT a.*, COALESCE(n.notes, '') AS notes
-       FROM activities a
-       LEFT JOIN activity_notes n ON n.activity_id = a.id
-      WHERE a.status IN ('active', 'paused')
-      ORDER BY a.started_at DESC
-      LIMIT 1`
-  );
-
-  return result.rows[0] || null;
-}
-
-function safeFilePath(urlPath) {
-  const cleanPath = decodeURIComponent((urlPath || "/").split("?")[0]);
-  const requested = cleanPath === "/" ? "/index.html" : cleanPath;
+function safePublicPath(pathname) {
+  const clean = decodeURIComponent(pathname || "/");
+  const requested = clean === "/" ? "index.html" : clean.replace(/^\/+/, "");
   const resolved = path.normalize(path.join(PUBLIC_DIR, requested));
 
-  return resolved.startsWith(PUBLIC_DIR) ? resolved : null;
+  if (!resolved.startsWith(PUBLIC_DIR)) {
+    return null;
+  }
+
+  return resolved;
 }
 
-function formatDayLabel(day) {
-  const [year, month, date] = day.split("-");
-  return `${date}/${month}/${year}`;
-}
-
-function formatPdfClock(value) {
+function formatClock(value) {
   return new Intl.DateTimeFormat("pt-BR", {
     timeZone: TIME_ZONE,
     hour: "2-digit",
@@ -205,32 +179,39 @@ function formatDuration(milliseconds) {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
 
-  if (hours > 0) return `${hours}h ${String(minutes).padStart(2, "0")}min`;
-  if (minutes > 0) return `${minutes} min`;
+  if (hours > 0) {
+    return `${hours}h ${String(minutes).padStart(2, "0")}min`;
+  }
+
+  if (minutes > 0) {
+    return `${minutes} min`;
+  }
+
   return `${totalSeconds} s`;
 }
 
 function formatTotal(milliseconds) {
   const totalMinutes = Math.floor(Number(milliseconds || 0) / 60000);
 
-  if (totalMinutes < 60) return `${totalMinutes} min`;
+  if (totalMinutes < 60) {
+    return `${totalMinutes} min`;
+  }
 
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  return minutes > 0 ? `${hours}h ${minutes}min` : `${hours}h`;
+
+  return minutes ? `${hours}h ${minutes}min` : `${hours}h`;
 }
 
-async function exportDayPdf(res, day) {
-  // Carregamento tardio: o PDFKit não participa da inicialização da aplicação.
+async function generatePdf(res, day) {
   const PDFDocument = require("pdfkit");
 
   const result = await pool.query(
-    `SELECT a.*, COALESCE(n.notes, '') AS notes
-       FROM activities a
-       LEFT JOIN activity_notes n ON n.activity_id = a.id
-      WHERE a.status = 'completed'
-        AND (a.started_at AT TIME ZONE $1)::date = $2::date
-      ORDER BY a.started_at ASC`,
+    `SELECT *
+       FROM ld4_activities
+      WHERE status = 'completed'
+        AND (started_at AT TIME ZONE $1)::date = $2::date
+      ORDER BY started_at ASC`,
     [TIME_ZONE, day]
   );
 
@@ -245,35 +226,37 @@ async function exportDayPdf(res, day) {
 
   const doc = new PDFDocument({
     size: "A4",
-    margins: { top: 54, right: 54, bottom: 54, left: 54 },
-    info: {
-      Title: `Linha do Dia - ${formatDayLabel(day)}`,
-      Author: "Linha do Dia"
-    }
+    margins: { top: 54, right: 54, bottom: 54, left: 54 }
   });
 
   doc.pipe(res);
 
-  doc.fillColor("#222222").font("Helvetica-Bold").fontSize(20).text("Linha do Dia");
-  doc.moveDown(0.25).font("Helvetica").fontSize(10).fillColor("#666666").text(formatDayLabel(day));
+  doc.font("Helvetica-Bold").fontSize(20).fillColor("#222222").text("Linha do Dia");
+  doc.moveDown(0.25).font("Helvetica").fontSize(10).fillColor("#666666").text(day);
   doc.moveDown(0.25).text(`Tempo total registrado: ${formatTotal(total)}`);
   doc.moveDown(1.2);
 
   if (!rows.length) {
-    doc.font("Helvetica").fontSize(11).fillColor("#555555")
-      .text("Nenhuma atividade registrada neste dia.");
+    doc.fillColor("#555555").fontSize(11).text("Nenhuma atividade registrada.");
     doc.end();
     return;
   }
 
   rows.forEach((row, index) => {
-    if (index > 0) doc.moveDown(0.8);
+    if (index) doc.moveDown(0.8);
 
-    doc.font("Helvetica-Bold").fontSize(10).fillColor("#444444")
-      .text(`${formatPdfClock(row.started_at)} - ${formatPdfClock(row.ended_at)}   ${formatDuration(row.duration_ms)}`);
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(10)
+      .fillColor("#444444")
+      .text(`${formatClock(row.started_at)} - ${formatClock(row.ended_at)}   ${formatDuration(row.duration_ms)}`);
 
-    doc.moveDown(0.25).font("Helvetica-Bold").fontSize(12).fillColor("#222222")
-      .text(row.title, { lineGap: 2 });
+    doc
+      .moveDown(0.25)
+      .font("Helvetica-Bold")
+      .fontSize(12)
+      .fillColor("#222222")
+      .text(row.title);
 
     const subtasks = Array.isArray(row.subtasks) ? row.subtasks : [];
 
@@ -281,29 +264,29 @@ async function exportDayPdf(res, day) {
       doc.moveDown(0.35);
 
       subtasks.forEach(subtask => {
-        doc.font("Helvetica").fontSize(9.5)
+        doc
+          .font("Helvetica")
+          .fontSize(9.5)
           .fillColor(subtask.done ? "#777777" : "#333333")
-          .text(`${subtask.done ? "[x]" : "[ ]"} ${subtask.text}`, {
-            indent: 10,
-            lineGap: 1.5
-          });
+          .text(`${subtask.done ? "[x]" : "[ ]"} ${subtask.text}`, { indent: 10 });
       });
     }
 
     const notes = String(row.notes || "").trim();
 
     if (notes) {
-      doc.moveDown(0.45).font("Helvetica-Bold").fontSize(9.5).fillColor("#555555")
-        .text("Anotações:");
-
-      doc.moveDown(0.15).font("Helvetica").fontSize(9.5).fillColor("#444444")
-        .text(notes, { indent: 10, lineGap: 2 });
+      doc.moveDown(0.45).font("Helvetica-Bold").fontSize(9.5).fillColor("#555555").text("Anotações:");
+      doc.moveDown(0.15).font("Helvetica").fontSize(9.5).fillColor("#444444").text(notes, {
+        indent: 10,
+        lineGap: 2
+      });
     }
 
     if (index < rows.length - 1) {
       doc.moveDown(0.8);
       const y = doc.y;
-      doc.moveTo(doc.page.margins.left, y)
+      doc
+        .moveTo(doc.page.margins.left, y)
         .lineTo(doc.page.width - doc.page.margins.right, y)
         .strokeColor("#dddddd")
         .lineWidth(0.7)
@@ -324,32 +307,30 @@ async function handleApi(req, res, url) {
   if (req.method === "GET" && url.pathname === "/api/state") {
     const day = url.searchParams.get("day");
 
-    if (!validDateKey(day)) {
+    if (!validDay(day)) {
       sendJson(res, 400, { error: "Data inválida." });
       return true;
     }
 
-    const [activeResult, completedResult, plansResult] = await Promise.all([
+    const [activeResult, entriesResult, plansResult] = await Promise.all([
       pool.query(
-        `SELECT a.*, COALESCE(n.notes, '') AS notes
-           FROM activities a
-           LEFT JOIN activity_notes n ON n.activity_id = a.id
-          WHERE a.status IN ('active', 'paused')
-          ORDER BY a.started_at DESC
+        `SELECT *
+           FROM ld4_activities
+          WHERE status IN ('active', 'paused')
+          ORDER BY started_at DESC
           LIMIT 1`
       ),
       pool.query(
-        `SELECT a.*, COALESCE(n.notes, '') AS notes
-           FROM activities a
-           LEFT JOIN activity_notes n ON n.activity_id = a.id
-          WHERE a.status = 'completed'
-            AND (a.started_at AT TIME ZONE $1)::date = $2::date
-          ORDER BY a.started_at ASC`,
+        `SELECT *
+           FROM ld4_activities
+          WHERE status = 'completed'
+            AND (started_at AT TIME ZONE $1)::date = $2::date
+          ORDER BY started_at ASC`,
         [TIME_ZONE, day]
       ),
       pool.query(
         `SELECT *
-           FROM planned_activities
+           FROM ld4_plans
           WHERE planned_date = $1::date
           ORDER BY created_at ASC`,
         [day]
@@ -358,7 +339,7 @@ async function handleApi(req, res, url) {
 
     sendJson(res, 200, {
       active: mapActivity(activeResult.rows[0]),
-      entries: completedResult.rows.map(mapActivity),
+      entries: entriesResult.rows.map(mapActivity),
       plans: plansResult.rows.map(mapPlan)
     });
     return true;
@@ -367,124 +348,72 @@ async function handleApi(req, res, url) {
   if (req.method === "GET" && url.pathname === "/api/export/day.pdf") {
     const day = url.searchParams.get("day");
 
-    if (!validDateKey(day)) {
+    if (!validDay(day)) {
       sendJson(res, 400, { error: "Data inválida." });
       return true;
     }
 
-    await exportDayPdf(res, day);
+    await generatePdf(res, day);
     return true;
   }
 
   if (req.method === "POST" && url.pathname === "/api/start") {
     const body = await readJson(req);
-    const title = String(body.title || "").trim().slice(0, 500);
-    const notes = sanitizeNotes(body.notes);
+    const title = cleanTitle(body.title);
+    const notes = cleanNotes(body.notes);
 
     if (!title) {
-      sendJson(res, 400, { error: "Informe a descrição da atividade." });
+      sendJson(res, 400, { error: "Informe a descrição." });
       return true;
     }
 
-    const existing = await getActive();
-
-    if (existing) {
+    if (await getActive()) {
       sendJson(res, 409, { error: "Já existe uma atividade em andamento." });
       return true;
     }
 
     const id = randomUUID();
-    const client = await pool.connect();
 
-    try {
-      await client.query("BEGIN");
+    const result = await pool.query(
+      `INSERT INTO ld4_activities
+        (id, title, notes, status, started_at, last_started_at, accumulated_ms, subtasks)
+       VALUES ($1, $2, $3, 'active', NOW(), NOW(), 0, '[]'::jsonb)
+       RETURNING *`,
+      [id, title, notes]
+    );
 
-      await client.query(
-        `INSERT INTO activities
-          (id, title, status, started_at, last_started_at, accumulated_ms, subtasks)
-         VALUES ($1, $2, 'active', NOW(), NOW(), 0, '[]'::jsonb)`,
-        [id, title]
-      );
-
-      if (notes) {
-        await client.query(
-          `INSERT INTO activity_notes (activity_id, notes, updated_at)
-           VALUES ($1, $2, NOW())
-           ON CONFLICT (activity_id)
-           DO UPDATE SET notes = EXCLUDED.notes, updated_at = NOW()`,
-          [id, notes]
-        );
-      }
-
-      await client.query("COMMIT");
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
-
-    sendJson(res, 201, { active: mapActivity(await getActivityById(id)) });
+    sendJson(res, 201, { active: mapActivity(result.rows[0]) });
     return true;
   }
 
-  if (req.method === "POST" && url.pathname === "/api/pause") {
-    const row = await getActive();
+  if (req.method === "PUT" && url.pathname === "/api/active/notes") {
+    const active = await getActive();
 
-    if (!row) {
+    if (!active) {
       sendJson(res, 404, { error: "Nenhuma atividade em andamento." });
       return true;
     }
 
-    if (row.status !== "paused") {
-      const extra = row.last_started_at
-        ? Math.max(0, Date.now() - new Date(row.last_started_at).getTime())
-        : 0;
+    const body = await readJson(req);
+    const notes = cleanNotes(body.notes);
 
-      const accumulated = Number(row.accumulated_ms || 0) + extra;
+    const result = await pool.query(
+      `UPDATE ld4_activities
+          SET notes = $2,
+              updated_at = NOW()
+        WHERE id = $1
+        RETURNING *`,
+      [active.id, notes]
+    );
 
-      await pool.query(
-        `UPDATE activities
-            SET status = 'paused',
-                accumulated_ms = $2,
-                last_started_at = NULL,
-                updated_at = NOW()
-          WHERE id = $1`,
-        [row.id, accumulated]
-      );
-    }
-
-    sendJson(res, 200, { active: mapActivity(await getActivityById(row.id)) });
+    sendJson(res, 200, { active: mapActivity(result.rows[0]) });
     return true;
   }
 
-  if (req.method === "POST" && url.pathname === "/api/resume") {
-    const row = await getActive();
+  if (req.method === "PUT" && url.pathname === "/api/active/subtasks") {
+    const active = await getActive();
 
-    if (!row) {
-      sendJson(res, 404, { error: "Nenhuma atividade em andamento." });
-      return true;
-    }
-
-    if (row.status !== "active") {
-      await pool.query(
-        `UPDATE activities
-            SET status = 'active',
-                last_started_at = NOW(),
-                updated_at = NOW()
-          WHERE id = $1`,
-        [row.id]
-      );
-    }
-
-    sendJson(res, 200, { active: mapActivity(await getActivityById(row.id)) });
-    return true;
-  }
-
-  if (req.method === "PUT" && url.pathname === "/api/subtasks") {
-    const row = await getActive();
-
-    if (!row) {
+    if (!active) {
       sendJson(res, 404, { error: "Nenhuma atividade em andamento." });
       return true;
     }
@@ -493,110 +422,278 @@ async function handleApi(req, res, url) {
     let subtasks;
 
     try {
-      subtasks = sanitizeSubtasks(body.subtasks);
+      subtasks = cleanSubtasks(body.subtasks);
     } catch (error) {
       sendJson(res, 400, { error: error.message });
       return true;
     }
 
-    await pool.query(
-      `UPDATE activities
+    const result = await pool.query(
+      `UPDATE ld4_activities
           SET subtasks = $2::jsonb,
               updated_at = NOW()
-        WHERE id = $1`,
-      [row.id, JSON.stringify(subtasks)]
+        WHERE id = $1
+        RETURNING *`,
+      [active.id, JSON.stringify(subtasks)]
     );
 
-    sendJson(res, 200, { active: mapActivity(await getActivityById(row.id)) });
+    sendJson(res, 200, { active: mapActivity(result.rows[0]) });
     return true;
   }
 
-  if (req.method === "PUT" && url.pathname === "/api/notes") {
-    const row = await getActive();
+  if (req.method === "POST" && url.pathname === "/api/active/pause") {
+    const active = await getActive();
 
-    if (!row) {
+    if (!active) {
       sendJson(res, 404, { error: "Nenhuma atividade em andamento." });
       return true;
     }
 
-    const body = await readJson(req);
-    const notes = sanitizeNotes(body.notes);
+    if (active.status === "paused") {
+      sendJson(res, 200, { active: mapActivity(active) });
+      return true;
+    }
 
-    await pool.query(
-      `INSERT INTO activity_notes (activity_id, notes, updated_at)
-       VALUES ($1, $2, NOW())
-       ON CONFLICT (activity_id)
-       DO UPDATE SET notes = EXCLUDED.notes, updated_at = NOW()`,
-      [row.id, notes]
+    const extra = active.last_started_at
+      ? Math.max(0, Date.now() - new Date(active.last_started_at).getTime())
+      : 0;
+
+    const accumulated = Number(active.accumulated_ms || 0) + extra;
+
+    const result = await pool.query(
+      `UPDATE ld4_activities
+          SET status = 'paused',
+              accumulated_ms = $2,
+              last_started_at = NULL,
+              updated_at = NOW()
+        WHERE id = $1
+        RETURNING *`,
+      [active.id, accumulated]
     );
 
-    sendJson(res, 200, { active: mapActivity(await getActivityById(row.id)) });
+    sendJson(res, 200, { active: mapActivity(result.rows[0]) });
     return true;
   }
 
-  if (req.method === "POST" && url.pathname === "/api/finish") {
-    const row = await getActive();
+  if (req.method === "POST" && url.pathname === "/api/active/resume") {
+    const active = await getActive();
 
-    if (!row) {
+    if (!active) {
       sendJson(res, 404, { error: "Nenhuma atividade em andamento." });
       return true;
     }
 
-    let duration = Number(row.accumulated_ms || 0);
+    if (active.status === "active") {
+      sendJson(res, 200, { active: mapActivity(active) });
+      return true;
+    }
 
-    if (row.status === "active" && row.last_started_at) {
-      duration += Math.max(0, Date.now() - new Date(row.last_started_at).getTime());
+    const result = await pool.query(
+      `UPDATE ld4_activities
+          SET status = 'active',
+              last_started_at = NOW(),
+              updated_at = NOW()
+        WHERE id = $1
+        RETURNING *`,
+      [active.id]
+    );
+
+    sendJson(res, 200, { active: mapActivity(result.rows[0]) });
+    return true;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/active/finish") {
+    const active = await getActive();
+
+    if (!active) {
+      sendJson(res, 404, { error: "Nenhuma atividade em andamento." });
+      return true;
+    }
+
+    let duration = Number(active.accumulated_ms || 0);
+
+    if (active.status === "active" && active.last_started_at) {
+      duration += Math.max(0, Date.now() - new Date(active.last_started_at).getTime());
     }
 
     duration = Math.max(1000, duration);
 
-    await pool.query(
-      `UPDATE activities
+    const result = await pool.query(
+      `UPDATE ld4_activities
           SET status = 'completed',
               ended_at = NOW(),
               last_started_at = NULL,
               accumulated_ms = $2,
               duration_ms = $2,
               updated_at = NOW()
-        WHERE id = $1`,
-      [row.id, duration]
+        WHERE id = $1
+        RETURNING *`,
+      [active.id, duration]
     );
 
-    sendJson(res, 200, { entry: mapActivity(await getActivityById(row.id)) });
+    sendJson(res, 200, { entry: mapActivity(result.rows[0]) });
     return true;
   }
 
-
-
-  if (req.method === "POST" && url.pathname === "/api/plans") {
+  if (req.method === "POST" && url.pathname === "/api/manual") {
     const body = await readJson(req);
-    const title = String(body.title || "").trim().slice(0, 500);
-    const notes = sanitizeNotes(body.notes);
-    const day = String(body.day || "");
+    const title = cleanTitle(body.title);
+    const notes = cleanNotes(body.notes);
+    const startIso = body.startIso;
+    const endIso = body.endIso;
 
-    if (!title) {
-      sendJson(res, 400, { error: "Informe a atividade planejada." });
+    if (!title || !validIsoDate(startIso) || !validIsoDate(endIso)) {
+      sendJson(res, 400, { error: "Preencha descrição, início e fim corretamente." });
       return true;
     }
 
-    if (!validDateKey(day)) {
-      sendJson(res, 400, { error: "Data inválida." });
+    const startMs = new Date(startIso).getTime();
+    const endMs = new Date(endIso).getTime();
+
+    if (endMs <= startMs) {
+      sendJson(res, 400, { error: "O fim precisa ser posterior ao início." });
       return true;
     }
 
     const id = randomUUID();
+    const duration = endMs - startMs;
 
     const result = await pool.query(
-      `INSERT INTO planned_activities
+      `INSERT INTO ld4_activities
+        (
+          id, title, notes, status, started_at, last_started_at,
+          ended_at, accumulated_ms, duration_ms, subtasks
+        )
+       VALUES ($1, $2, $3, 'completed', $4::timestamptz, NULL, $5::timestamptz, $6, $6, '[]'::jsonb)
+       RETURNING *`,
+      [id, title, notes, startIso, endIso, duration]
+    );
+
+    sendJson(res, 201, { entry: mapActivity(result.rows[0]) });
+    return true;
+  }
+
+  const entryMatch = url.pathname.match(/^\/api\/entries\/([^/]+)$/);
+
+  if (req.method === "PUT" && entryMatch) {
+    const id = decodeURIComponent(entryMatch[1]);
+    const body = await readJson(req);
+    const title = cleanTitle(body.title);
+    const notes = cleanNotes(body.notes);
+    const startIso = body.startIso;
+    const endIso = body.endIso;
+
+    if (!title || !validIsoDate(startIso) || !validIsoDate(endIso)) {
+      sendJson(res, 400, { error: "Preencha descrição, início e fim corretamente." });
+      return true;
+    }
+
+    const startMs = new Date(startIso).getTime();
+    const endMs = new Date(endIso).getTime();
+
+    if (endMs <= startMs) {
+      sendJson(res, 400, { error: "O fim precisa ser posterior ao início." });
+      return true;
+    }
+
+    const duration = endMs - startMs;
+
+    const result = await pool.query(
+      `UPDATE ld4_activities
+          SET title = $2,
+              notes = $3,
+              started_at = $4::timestamptz,
+              ended_at = $5::timestamptz,
+              accumulated_ms = $6,
+              duration_ms = $6,
+              updated_at = NOW()
+        WHERE id = $1
+          AND status = 'completed'
+        RETURNING *`,
+      [id, title, notes, startIso, endIso, duration]
+    );
+
+    if (!result.rows.length) {
+      sendJson(res, 404, { error: "Registro não encontrado." });
+      return true;
+    }
+
+    sendJson(res, 200, { entry: mapActivity(result.rows[0]) });
+    return true;
+  }
+
+  const reopenMatch = url.pathname.match(/^\/api\/entries\/([^/]+)\/reopen$/);
+
+  if (req.method === "POST" && reopenMatch) {
+    const id = decodeURIComponent(reopenMatch[1]);
+
+    if (await getActive()) {
+      sendJson(res, 409, { error: "Conclua a atividade atual antes de reabrir outra." });
+      return true;
+    }
+
+    const result = await pool.query(
+      `UPDATE ld4_activities
+          SET status = 'active',
+              ended_at = NULL,
+              last_started_at = NOW(),
+              accumulated_ms = COALESCE(duration_ms, accumulated_ms, 0),
+              duration_ms = NULL,
+              updated_at = NOW()
+        WHERE id = $1
+          AND status = 'completed'
+        RETURNING *`,
+      [id]
+    );
+
+    if (!result.rows.length) {
+      sendJson(res, 404, { error: "Registro não encontrado." });
+      return true;
+    }
+
+    sendJson(res, 200, { active: mapActivity(result.rows[0]) });
+    return true;
+  }
+
+  if (req.method === "DELETE" && url.pathname === "/api/day") {
+    const day = url.searchParams.get("day");
+
+    if (!validDay(day)) {
+      sendJson(res, 400, { error: "Data inválida." });
+      return true;
+    }
+
+    await pool.query(
+      `DELETE FROM ld4_activities
+        WHERE status = 'completed'
+          AND (started_at AT TIME ZONE $1)::date = $2::date`,
+      [TIME_ZONE, day]
+    );
+
+    sendJson(res, 200, { ok: true });
+    return true;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/plans") {
+    const body = await readJson(req);
+    const day = String(body.day || "");
+    const title = cleanTitle(body.title);
+    const notes = cleanNotes(body.notes);
+
+    if (!validDay(day) || !title) {
+      sendJson(res, 400, { error: "Informe a atividade planejada." });
+      return true;
+    }
+
+    const result = await pool.query(
+      `INSERT INTO ld4_plans
         (id, planned_date, title, notes)
        VALUES ($1, $2::date, $3, $4)
        RETURNING *`,
-      [id, day, title, notes]
+      [randomUUID(), day, title, notes]
     );
 
-    sendJson(res, 201, {
-      plan: mapPlan(result.rows[0])
-    });
+    sendJson(res, 201, { plan: mapPlan(result.rows[0]) });
     return true;
   }
 
@@ -605,8 +702,8 @@ async function handleApi(req, res, url) {
   if (req.method === "PUT" && planMatch) {
     const id = decodeURIComponent(planMatch[1]);
     const body = await readJson(req);
-    const title = String(body.title || "").trim().slice(0, 500);
-    const notes = sanitizeNotes(body.notes);
+    const title = cleanTitle(body.title);
+    const notes = cleanNotes(body.notes);
 
     if (!title) {
       sendJson(res, 400, { error: "Informe a atividade planejada." });
@@ -614,7 +711,7 @@ async function handleApi(req, res, url) {
     }
 
     const result = await pool.query(
-      `UPDATE planned_activities
+      `UPDATE ld4_plans
           SET title = $2,
               notes = $3,
               updated_at = NOW()
@@ -628,9 +725,7 @@ async function handleApi(req, res, url) {
       return true;
     }
 
-    sendJson(res, 200, {
-      plan: mapPlan(result.rows[0])
-    });
+    sendJson(res, 200, { plan: mapPlan(result.rows[0]) });
     return true;
   }
 
@@ -638,7 +733,7 @@ async function handleApi(req, res, url) {
     const id = decodeURIComponent(planMatch[1]);
 
     const result = await pool.query(
-      `DELETE FROM planned_activities
+      `DELETE FROM ld4_plans
         WHERE id = $1
         RETURNING id`,
       [id]
@@ -653,17 +748,22 @@ async function handleApi(req, res, url) {
     return true;
   }
 
-  const startPlanMatch = url.pathname.match(/^\/api\/plans\/([^/]+)\/start$/);
+  const planStartMatch = url.pathname.match(/^\/api\/plans\/([^/]+)\/start$/);
 
-  if (req.method === "POST" && startPlanMatch) {
-    const planId = decodeURIComponent(startPlanMatch[1]);
+  if (req.method === "POST" && planStartMatch) {
+    const id = decodeURIComponent(planStartMatch[1]);
+
+    if (await getActive()) {
+      sendJson(res, 409, { error: "Já existe uma atividade em andamento." });
+      return true;
+    }
 
     const planResult = await pool.query(
       `SELECT *
-         FROM planned_activities
+         FROM ld4_plans
         WHERE id = $1
         LIMIT 1`,
-      [planId]
+      [id]
     );
 
     const plan = planResult.rows[0];
@@ -673,62 +773,30 @@ async function handleApi(req, res, url) {
       return true;
     }
 
-    const plannedDay = typeof plan.planned_date === "string"
-      ? plan.planned_date
-      : new Intl.DateTimeFormat("en-CA", {
-          timeZone: TIME_ZONE,
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit"
-        }).format(new Date(plan.planned_date));
-
-    if (plannedDay !== currentDateKey()) {
-      sendJson(res, 400, {
-        error: "Essa atividade só pode ser iniciada no dia planejado."
-      });
-      return true;
-    }
-
-    const existing = await getActive();
-
-    if (existing) {
-      sendJson(res, 409, {
-        error: "Já existe uma atividade em andamento."
-      });
-      return true;
-    }
-
     const activityId = randomUUID();
     const client = await pool.connect();
 
     try {
       await client.query("BEGIN");
 
-      await client.query(
-        `INSERT INTO activities
-          (id, title, status, started_at, last_started_at, accumulated_ms, subtasks)
-         VALUES ($1, $2, 'active', NOW(), NOW(), 0, '[]'::jsonb)`,
-        [activityId, plan.title]
+      const activityResult = await client.query(
+        `INSERT INTO ld4_activities
+          (id, title, notes, status, started_at, last_started_at, accumulated_ms, subtasks)
+         VALUES ($1, $2, $3, 'active', NOW(), NOW(), 0, '[]'::jsonb)
+         RETURNING *`,
+        [activityId, plan.title, plan.notes || ""]
       );
 
-      if (String(plan.notes || "").trim()) {
-        await client.query(
-          `INSERT INTO activity_notes
-            (activity_id, notes, updated_at)
-           VALUES ($1, $2, NOW())
-           ON CONFLICT (activity_id)
-           DO UPDATE SET notes = EXCLUDED.notes, updated_at = NOW()`,
-          [activityId, plan.notes]
-        );
-      }
-
       await client.query(
-        `DELETE FROM planned_activities
-          WHERE id = $1`,
-        [planId]
+        `DELETE FROM ld4_plans WHERE id = $1`,
+        [id]
       );
 
       await client.query("COMMIT");
+
+      sendJson(res, 201, {
+        active: mapActivity(activityResult.rows[0])
+      });
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;
@@ -736,276 +804,6 @@ async function handleApi(req, res, url) {
       client.release();
     }
 
-    sendJson(res, 201, {
-      active: mapActivity(await getActivityById(activityId))
-    });
-    return true;
-  }
-
-  if (req.method === "POST" && url.pathname === "/api/manual") {
-    const body = await readJson(req);
-
-    const title = String(body.title || "").trim().slice(0, 500);
-    const notes = sanitizeNotes(body.notes);
-    const day = String(body.day || "");
-    const startTime = String(body.startTime || "");
-    const endTime = String(body.endTime || "");
-
-    if (!title) {
-      sendJson(res, 400, { error: "Informe a descrição da atividade." });
-      return true;
-    }
-
-    if (!validDateKey(day) || !validTime(startTime) || !validTime(endTime)) {
-      sendJson(res, 400, { error: "Data ou horário inválido." });
-      return true;
-    }
-
-    const startMinutes = timeToMinutes(startTime);
-    const endMinutes = timeToMinutes(endTime);
-
-    if (endMinutes <= startMinutes) {
-      sendJson(res, 400, {
-        error: "O horário final precisa ser posterior ao horário inicial."
-      });
-      return true;
-    }
-
-    const durationMs = (endMinutes - startMinutes) * 60 * 1000;
-    const id = randomUUID();
-    const client = await pool.connect();
-
-    try {
-      await client.query("BEGIN");
-
-      await client.query(
-        `INSERT INTO activities
-          (
-            id,
-            title,
-            status,
-            started_at,
-            last_started_at,
-            ended_at,
-            accumulated_ms,
-            duration_ms,
-            subtasks
-          )
-         VALUES (
-           $1,
-           $2,
-           'completed',
-           (($3::date + $4::time) AT TIME ZONE $7),
-           NULL,
-           (($3::date + $5::time) AT TIME ZONE $7),
-           $6,
-           $6,
-           '[]'::jsonb
-         )`,
-        [id, title, day, startTime, endTime, durationMs, TIME_ZONE]
-      );
-
-      if (notes) {
-        await client.query(
-          `INSERT INTO activity_notes (activity_id, notes, updated_at)
-           VALUES ($1, $2, NOW())
-           ON CONFLICT (activity_id)
-           DO UPDATE SET notes = EXCLUDED.notes, updated_at = NOW()`,
-          [id, notes]
-        );
-      }
-
-      await client.query("COMMIT");
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
-
-    sendJson(res, 201, {
-      entry: mapActivity(await getActivityById(id))
-    });
-
-    return true;
-  }
-
-  const reopenEntryMatch = url.pathname.match(/^\/api\/entries\/([^/]+)\/reopen$/);
-
-  if (req.method === "POST" && reopenEntryMatch) {
-    const id = decodeURIComponent(reopenEntryMatch[1]);
-
-    const existingActive = await getActive();
-
-    if (existingActive) {
-      sendJson(res, 409, {
-        error: "Conclua ou pause a atividade atual antes de reabrir outra."
-      });
-      return true;
-    }
-
-    const result = await pool.query(
-      `UPDATE activities
-          SET status = 'active',
-              ended_at = NULL,
-              last_started_at = NOW(),
-              accumulated_ms = COALESCE(duration_ms, accumulated_ms, 0),
-              duration_ms = NULL,
-              updated_at = NOW()
-        WHERE id = $1
-          AND status = 'completed'
-        RETURNING id`,
-      [id]
-    );
-
-    if (!result.rows.length) {
-      sendJson(res, 404, {
-        error: "Registro concluído não encontrado."
-      });
-      return true;
-    }
-
-    sendJson(res, 200, {
-      active: mapActivity(await getActivityById(id))
-    });
-    return true;
-  }
-
-  const editEntryMatch = url.pathname.match(/^\/api\/entries\/([^/]+)$/);
-
-  if (req.method === "PUT" && editEntryMatch) {
-    const id = decodeURIComponent(editEntryMatch[1]);
-    const body = await readJson(req);
-
-    const title = String(body.title || "").trim().slice(0, 500);
-    const notes = sanitizeNotes(body.notes);
-    const day = String(body.day || "");
-    const startTime = String(body.startTime || "");
-    const endTime = String(body.endTime || "");
-
-    if (!title) {
-      sendJson(res, 400, { error: "Informe a descrição da atividade." });
-      return true;
-    }
-
-    if (!validDateKey(day) || !validTime(startTime) || !validTime(endTime)) {
-      sendJson(res, 400, { error: "Data ou horário inválido." });
-      return true;
-    }
-
-    const startMinutes = timeToMinutes(startTime);
-    const endMinutes = timeToMinutes(endTime);
-
-    if (endMinutes <= startMinutes) {
-      sendJson(res, 400, {
-        error: "O horário final precisa ser posterior ao horário inicial."
-      });
-      return true;
-    }
-
-    const durationMs = (endMinutes - startMinutes) * 60 * 1000;
-
-    const existing = await pool.query(
-      `SELECT id
-         FROM activities
-        WHERE id = $1
-          AND status = 'completed'
-        LIMIT 1`,
-      [id]
-    );
-
-    if (!existing.rows.length) {
-      sendJson(res, 404, { error: "Registro não encontrado." });
-      return true;
-    }
-
-    const client = await pool.connect();
-
-    try {
-      await client.query("BEGIN");
-
-      await client.query(
-        `UPDATE activities
-            SET title = $2,
-                started_at = (($3::date + $4::time) AT TIME ZONE $7),
-                ended_at = (($3::date + $5::time) AT TIME ZONE $7),
-                last_started_at = NULL,
-                accumulated_ms = $6,
-                duration_ms = $6,
-                updated_at = NOW()
-          WHERE id = $1`,
-        [id, title, day, startTime, endTime, durationMs, TIME_ZONE]
-      );
-
-      await client.query(
-        `INSERT INTO activity_notes (activity_id, notes, updated_at)
-         VALUES ($1, $2, NOW())
-         ON CONFLICT (activity_id)
-         DO UPDATE SET notes = EXCLUDED.notes, updated_at = NOW()`,
-        [id, notes]
-      );
-
-      await client.query("COMMIT");
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
-
-    sendJson(res, 200, {
-      entry: mapActivity(await getActivityById(id))
-    });
-
-    return true;
-  }
-
-  if (req.method === "DELETE" && url.pathname === "/api/day") {
-    const day = url.searchParams.get("day");
-
-    if (!validDateKey(day)) {
-      sendJson(res, 400, { error: "Data inválida." });
-      return true;
-    }
-
-    const ids = await pool.query(
-      `SELECT id
-         FROM activities
-        WHERE status = 'completed'
-          AND (started_at AT TIME ZONE $1)::date = $2::date`,
-      [TIME_ZONE, day]
-    );
-
-    const activityIds = ids.rows.map(row => row.id);
-
-    const client = await pool.connect();
-
-    try {
-      await client.query("BEGIN");
-
-      if (activityIds.length) {
-        await client.query(
-          `DELETE FROM activity_notes WHERE activity_id = ANY($1::text[])`,
-          [activityIds]
-        );
-      }
-
-      await client.query(
-        `DELETE FROM activities
-          WHERE status = 'completed'
-            AND (started_at AT TIME ZONE $1)::date = $2::date`,
-        [TIME_ZONE, day]
-      );
-
-      await client.query("COMMIT");
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
-
-    sendJson(res, 200, { ok: true });
     return true;
   }
 
@@ -1026,7 +824,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    const filePath = safeFilePath(url.pathname);
+    const filePath = safePublicPath(url.pathname);
 
     if (!filePath) {
       res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
@@ -1041,11 +839,11 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      const extension = path.extname(filePath).toLowerCase();
+      const ext = path.extname(filePath).toLowerCase();
 
       res.writeHead(200, {
-        "Content-Type": MIME_TYPES[extension] || "application/octet-stream",
-        "Cache-Control": extension === ".html" ? "no-cache" : "public, max-age=3600"
+        "Content-Type": MIME_TYPES[ext] || "application/octet-stream",
+        "Cache-Control": ext === ".html" ? "no-cache" : "public, max-age=3600"
       });
 
       fs.createReadStream(filePath).pipe(res);
@@ -1054,20 +852,21 @@ const server = http.createServer(async (req, res) => {
     console.error(error);
 
     if (!res.headersSent) {
-      sendJson(res, 500, { error: "Erro interno do servidor." });
+      sendJson(res, 500, { error: error.message || "Erro interno do servidor." });
     } else {
       res.end();
     }
   }
 });
 
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`Linha do Dia ouvindo na porta ${PORT}`);
+});
+
 initDatabase()
   .then(() => {
-    server.listen(PORT, "0.0.0.0", () => {
-      console.log(`Linha do Dia rodando na porta ${PORT}`);
-    });
+    console.log("Linha do Dia pronta.");
   })
   .catch(error => {
-    console.error("Falha ao iniciar o banco de dados:", error);
-    process.exit(1);
+    console.error("Falha ao preparar banco:", error);
   });

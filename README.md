@@ -1,44 +1,49 @@
-# Linha do Dia v3.1
+# Linha do Dia v4 — versão estável reescrita
 
-Versão de correção da atualização v3.
+Esta versão foi reescrita do zero e usa tabelas novas no PostgreSQL:
 
-## Correção de inicialização
+- `ld4_activities`
+- `ld4_plans`
 
-A versão v3 tentava adicionar a coluna `notes` diretamente na tabela `activities`
-durante a inicialização. Nesta versão isso foi removido.
+Ela não depende das tabelas criadas pelas versões anteriores.
 
-As anotações agora ficam em uma tabela separada:
+## Recursos
+
+- cronômetro;
+- tempo visível no título da aba;
+- modo foco quando há atividade em andamento;
+- descrição e anotações;
+- anotações salvas automaticamente;
+- checklist;
+- linha do tempo em ordem cronológica;
+- edição de registros pelo botão `···`;
+- reabrir atividade concluída;
+- lançamento manual;
+- planejamento de amanhã;
+- iniciar atividade planejada;
+- exportar PDF do dia.
+
+## Instalação
+
+Substitua TODO o conteúdo do repositório pelos arquivos deste pacote.
+
+Estrutura:
 
 ```text
-activity_notes
+/
+├── .gitignore
+├── package.json
+├── db.js
+├── schema.sql
+├── server.js
+└── public/
+    └── index.html
 ```
 
-Isso evita alterar a tabela que já contém seus registros.
+No Railway, mantenha apenas:
 
-O PDFKit também passou a ser carregado somente quando o botão de exportação de PDF é usado,
-e não durante a inicialização da aplicação.
+1. o serviço Node conectado ao GitHub;
+2. o PostgreSQL;
+3. `DATABASE_URL` no serviço Node apontando para o Postgres.
 
-## O que permanece
-
-- dados existentes preservados;
-- descrição + anotações;
-- anotações salvas no PostgreSQL;
-- botão recolhido de anotações na linha do tempo;
-- linha do tempo do mais antigo para o mais recente;
-- exportação em PDF;
-- checklist;
-- cronômetro.
-
-## Atualização
-
-Substitua no GitHub:
-
-- `package.json`
-- `db.js`
-- `schema.sql`
-- `server.js`
-- `public/index.html`
-
-Não apague o PostgreSQL.
-
-A `.gitignore` atual pode permanecer como está.
+Não é preciso executar SQL manualmente. As tabelas novas são criadas automaticamente.

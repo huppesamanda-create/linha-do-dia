@@ -1,6 +1,7 @@
-CREATE TABLE IF NOT EXISTS activities (
+CREATE TABLE IF NOT EXISTS ld4_activities (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
+  notes TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL CHECK (status IN ('active', 'paused', 'completed')),
   started_at TIMESTAMPTZ NOT NULL,
   last_started_at TIMESTAMPTZ,
@@ -12,21 +13,20 @@ CREATE TABLE IF NOT EXISTS activities (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS activity_notes (
-  activity_id TEXT PRIMARY KEY,
-  notes TEXT NOT NULL DEFAULT '',
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_activities_status
-  ON activities(status);
-
-CREATE INDEX IF NOT EXISTS idx_activities_started_at
-  ON activities(started_at ASC);
-
-
-CREATE TABLE IF NOT EXISTS enam_portal_state (
+CREATE TABLE IF NOT EXISTS ld4_plans (
   id TEXT PRIMARY KEY,
-  data JSONB NOT NULL DEFAULT '{}'::jsonb,
+  planned_date DATE NOT NULL,
+  title TEXT NOT NULL,
+  notes TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS ld4_activities_status_idx
+  ON ld4_activities(status);
+
+CREATE INDEX IF NOT EXISTS ld4_activities_started_idx
+  ON ld4_activities(started_at);
+
+CREATE INDEX IF NOT EXISTS ld4_plans_date_idx
+  ON ld4_plans(planned_date, created_at);

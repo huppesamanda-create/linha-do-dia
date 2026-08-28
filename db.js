@@ -8,23 +8,19 @@ if (!process.env.DATABASE_URL) {
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  connectionTimeoutMillis: 10000
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 30000
 });
 
 async function initDatabase() {
-  console.log("Conectando ao banco de dados...");
+  const schemaPath = path.join(__dirname, "schema.sql");
+  const schema = fs.readFileSync(schemaPath, "utf8");
 
   const client = await pool.connect();
 
   try {
-    await client.query("SET lock_timeout = '5s'");
-    await client.query("SET statement_timeout = '15s'");
-
-    const schemaPath = path.join(__dirname, "schema.sql");
-    const schema = fs.readFileSync(schemaPath, "utf8");
-
-    console.log("Verificando estrutura do banco...");
     await client.query(schema);
+    await client.query("SELECT 1");
     console.log("Banco de dados pronto.");
   } finally {
     client.release();

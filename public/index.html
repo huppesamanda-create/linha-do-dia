@@ -88,18 +88,52 @@
       gap: 16px;
     }
 
-    .enam-link {
-      color: #4f4f4f;
+    .app-menu {
+      position: relative;
+    }
+
+    .app-menu summary {
+      list-style: none;
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border: 1px solid #1f1f1f;
+      border-radius: 7px;
+      color: #444;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      user-select: none;
+    }
+
+    .app-menu summary::-webkit-details-marker { display: none; }
+    .app-menu summary:hover { color: #999; border-color: #303030; }
+
+    .app-menu-links {
+      position: absolute;
+      top: 37px;
+      right: 0;
+      z-index: 50;
+      width: 165px;
+      padding: 6px;
+      border: 1px solid #252525;
+      border-radius: 8px;
+      background: #090909;
+    }
+
+    .app-menu-links a {
+      display: block;
+      padding: 8px 9px;
+      border-radius: 6px;
+      color: #696969;
       text-decoration: none;
       font-size: 11px;
       font-weight: 700;
-      letter-spacing: .03em;
-      transition: color .15s ease;
     }
 
-    .enam-link:hover {
-      color: #a0a0a0;
-    }
+    .app-menu-links a:hover { background: #101010; color: #c5c5c5; }
 
     .status {
       display: none;
@@ -697,7 +731,13 @@
         <h1>Linha do Dia</h1>
       </div>
       <div class="topbar-right">
-        <a class="enam-link" href="/enam/">ENAM</a>
+        <details class="app-menu">
+          <summary aria-label="Abrir menu">···</summary>
+          <nav class="app-menu-links">
+            <a href="/enam/">ENAM</a>
+            <a href="/financeiro/">Financeiro</a>
+          </nav>
+        </details>
         <div class="day-total" id="dayTotal">Carregando...</div>
       </div>
     </header>

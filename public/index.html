@@ -306,6 +306,27 @@
       font-weight: 500;
     }
 
+    .active-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .active-actions .button {
+      min-width: 96px;
+    }
+
+    .focus-panel.is-running #activityForm {
+      display: none;
+    }
+
+    .focus-panel.is-running .active-card {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: 0;
+    }
+
     .active-notes {
       margin-top: 30px;
     }
@@ -601,6 +622,20 @@
       padding: 0 4px;
       font-size: 10px;
       font-weight: 700;
+    }
+
+    .inline-reopen {
+      min-height: 34px;
+      border: 0;
+      background: transparent;
+      color: #646464;
+      padding: 0 4px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .inline-reopen:hover {
+      color: #c3c3c3;
     }
 
     .inline-delete:hover {
@@ -1083,7 +1118,15 @@
             <button class="button button-primary" id="startButton" type="submit">
               Iniciar
             </button>
+          </div>
+        </form>
 
+        <section class="active-card" id="activeCard">
+          <div class="eyebrow">Em andamento</div>
+          <div class="active-title" id="activeTitle"></div>
+          <div class="active-time" id="activeTime"></div>
+
+          <div class="active-actions">
             <button class="button" id="pauseButton" type="button" disabled>
               Pausar
             </button>
@@ -1092,12 +1135,6 @@
               Concluir
             </button>
           </div>
-        </form>
-
-        <section class="active-card" id="activeCard">
-          <div class="eyebrow">Em andamento</div>
-          <div class="active-title" id="activeTitle"></div>
-          <div class="active-time" id="activeTime"></div>
 
           <div class="active-notes">
             <label class="section-label" for="activeNotes">
@@ -1292,6 +1329,7 @@
       const $ = selector => document.querySelector(selector);
 
       const timerEl = $("#timer");
+      const focusPanel = document.querySelector(".focus-panel");
       const dateLabel = $("#dateLabel");
       const dayTotal = $("#dayTotal");
       const statusMessage = $("#statusMessage");
@@ -1549,6 +1587,7 @@
 
       function renderActive() {
         renderBrowserTitle();
+        focusPanel.classList.toggle("is-running", Boolean(active));
 
         if (!active) {
           activeCard.classList.remove("visible");
@@ -1730,6 +1769,33 @@
         cancel.className = "inline-cancel";
         cancel.textContent = "Cancelar";
 
+        const reopen = document.createElement("button");
+        reopen.type = "button";
+        reopen.className = "inline-reopen";
+        reopen.textContent = "Reabrir";
+
+        reopen.addEventListener("click", async () => {
+          reopen.disabled = true;
+          save.disabled = true;
+          cancel.disabled = true;
+          error.textContent = "";
+
+          try {
+            const data = await api(
+              `/api/entries/${encodeURIComponent(entry.id)}/reopen`,
+              { method: "POST" }
+            );
+
+            active = data.active;
+            await load();
+          } catch (apiError) {
+            error.textContent = apiError.message;
+            reopen.disabled = false;
+            save.disabled = false;
+            cancel.disabled = false;
+          }
+        });
+
         cancel.addEventListener("click", () => {
           editor.classList.remove("visible");
           menuButton.setAttribute("aria-expanded", "false");
@@ -1771,7 +1837,7 @@
           }
         });
 
-        actions.append(save, cancel);
+        actions.append(save, cancel, reopen);
         editor.append(grid, error, actions);
 
         return editor;

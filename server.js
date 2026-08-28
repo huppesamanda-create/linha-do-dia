@@ -502,6 +502,106 @@ async function handleApi(req, res, url) {
     return true;
   }
 
+
+  if (req.method === "POST" && url.pathname === "/api/finance/categories") {
+    const body = await readJson(req);
+    const name = String(body.name || "").trim().slice(0, 120);
+
+    if (!name) {
+      sendJson(res, 400, { error: "Informe o nome da categoria." });
+      return true;
+    }
+
+    const existing = await pool.query(
+      `SELECT id
+         FROM ld4_finance_categories
+        WHERE LOWER(name) = LOWER($1)
+        LIMIT 1`,
+      [name]
+    );
+
+    if (existing.rows.length) {
+      sendJson(res, 409, { error: "Já existe uma categoria com esse nome." });
+      return true;
+    }
+
+    const orderResult = await pool.query(
+      `SELECT COALESCE(MAX(sort_order), 0) + 10 AS next_order
+         FROM ld4_finance_categories`
+    );
+
+    const id = randomUUID();
+    const sortOrder = Number(orderResult.rows[0]?.next_order || 10);
+
+    const result = await pool.query(
+      `INSERT INTO ld4_finance_categories
+        (id, name, sort_order, active, created_at, updated_at)
+       VALUES ($1, $2, $3, TRUE, NOW(), NOW())
+       RETURNING id, name, sort_order`,
+      [id, name, sortOrder]
+    );
+
+    sendJson(res, 201, {
+      category: {
+        id: result.rows[0].id,
+        name: result.rows[0].name,
+        sortOrder: Number(result.rows[0].sort_order || 0)
+      }
+    });
+    return true;
+  }
+
+  const financeCategoryMatch = url.pathname.match(/^\/api\/finance\/categories\/([^/]+)$/);
+
+  if (req.method === "PUT" && financeCategoryMatch) {
+    const id = decodeURIComponent(financeCategoryMatch[1]);
+    const body = await readJson(req);
+    const name = String(body.name || "").trim().slice(0, 120);
+
+    if (!name) {
+      sendJson(res, 400, { error: "Informe o nome da categoria." });
+      return true;
+    }
+
+    const duplicate = await pool.query(
+      `SELECT id
+         FROM ld4_finance_categories
+        WHERE LOWER(name) = LOWER($1)
+          AND id <> $2
+        LIMIT 1`,
+      [name, id]
+    );
+
+    if (duplicate.rows.length) {
+      sendJson(res, 409, { error: "Já existe uma categoria com esse nome." });
+      return true;
+    }
+
+    const result = await pool.query(
+      `UPDATE ld4_finance_categories
+          SET name = $2,
+              updated_at = NOW()
+        WHERE id = $1
+          AND active = TRUE
+        RETURNING id, name, sort_order`,
+      [id, name]
+    );
+
+    if (!result.rows.length) {
+      sendJson(res, 404, { error: "Categoria não encontrada." });
+      return true;
+    }
+
+    sendJson(res, 200, {
+      category: {
+        id: result.rows[0].id,
+        name: result.rows[0].name,
+        sortOrder: Number(result.rows[0].sort_order || 0)
+      }
+    });
+    return true;
+  }
+
   if (req.method === "PUT" && url.pathname === "/api/finance/budget") {
     const body = await readJson(req);
     const year = Number(body.year);

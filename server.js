@@ -75,8 +75,45 @@ function mapActivity(row) {
   };
 }
 
+function mapPlan(row) {
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    day: typeof row.planned_date === "string"
+      ? row.planned_date
+      : new Intl.DateTimeFormat("en-CA", {
+          timeZone: TIME_ZONE,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).format(new Date(row.planned_date)),
+    title: row.title,
+    notes: row.notes || ""
+  };
+}
+
 function validDateKey(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value || "");
+}
+
+function currentDateKey() {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(new Date());
+
+  const values = {};
+
+  parts.forEach(part => {
+    if (part.type !== "literal") {
+      values[part.type] = part.value;
+    }
+  });
+
+  return `${values.year}-${values.month}-${values.day}`;
 }
 
 function validTime(value) {
@@ -292,7 +329,7 @@ async function handleApi(req, res, url) {
       return true;
     }
 
-    const [activeResult, completedResult] = await Promise.all([
+    const [activeResult, completedResult, plansResult] = await Promise.all([
       pool.query(
         `SELECT a.*, COALESCE(n.notes, '') AS notes
            FROM activities a
@@ -309,12 +346,20 @@ async function handleApi(req, res, url) {
             AND (a.started_at AT TIME ZONE $1)::date = $2::date
           ORDER BY a.started_at ASC`,
         [TIME_ZONE, day]
+      ),
+      pool.query(
+        `SELECT *
+           FROM planned_activities
+          WHERE planned_date = $1::date
+          ORDER BY created_at ASC`,
+        [day]
       )
     ]);
 
     sendJson(res, 200, {
       active: mapActivity(activeResult.rows[0]),
-      entries: completedResult.rows.map(mapActivity)
+      entries: completedResult.rows.map(mapActivity),
+      plans: plansResult.rows.map(mapPlan)
     });
     return true;
   }
@@ -522,6 +567,181 @@ async function handleApi(req, res, url) {
   }
 
 
+
+  if (req.method === "POST" && url.pathname === "/api/plans") {
+    const body = await readJson(req);
+    const title = String(body.title || "").trim().slice(0, 500);
+    const notes = sanitizeNotes(body.notes);
+    const day = String(body.day || "");
+
+    if (!title) {
+      sendJson(res, 400, { error: "Informe a atividade planejada." });
+      return true;
+    }
+
+    if (!validDateKey(day)) {
+      sendJson(res, 400, { error: "Data inválida." });
+      return true;
+    }
+
+    const id = randomUUID();
+
+    const result = await pool.query(
+      `INSERT INTO planned_activities
+        (id, planned_date, title, notes)
+       VALUES ($1, $2::date, $3, $4)
+       RETURNING *`,
+      [id, day, title, notes]
+    );
+
+    sendJson(res, 201, {
+      plan: mapPlan(result.rows[0])
+    });
+    return true;
+  }
+
+  const planMatch = url.pathname.match(/^\/api\/plans\/([^/]+)$/);
+
+  if (req.method === "PUT" && planMatch) {
+    const id = decodeURIComponent(planMatch[1]);
+    const body = await readJson(req);
+    const title = String(body.title || "").trim().slice(0, 500);
+    const notes = sanitizeNotes(body.notes);
+
+    if (!title) {
+      sendJson(res, 400, { error: "Informe a atividade planejada." });
+      return true;
+    }
+
+    const result = await pool.query(
+      `UPDATE planned_activities
+          SET title = $2,
+              notes = $3,
+              updated_at = NOW()
+        WHERE id = $1
+        RETURNING *`,
+      [id, title, notes]
+    );
+
+    if (!result.rows.length) {
+      sendJson(res, 404, { error: "Planejamento não encontrado." });
+      return true;
+    }
+
+    sendJson(res, 200, {
+      plan: mapPlan(result.rows[0])
+    });
+    return true;
+  }
+
+  if (req.method === "DELETE" && planMatch) {
+    const id = decodeURIComponent(planMatch[1]);
+
+    const result = await pool.query(
+      `DELETE FROM planned_activities
+        WHERE id = $1
+        RETURNING id`,
+      [id]
+    );
+
+    if (!result.rows.length) {
+      sendJson(res, 404, { error: "Planejamento não encontrado." });
+      return true;
+    }
+
+    sendJson(res, 200, { ok: true });
+    return true;
+  }
+
+  const startPlanMatch = url.pathname.match(/^\/api\/plans\/([^/]+)\/start$/);
+
+  if (req.method === "POST" && startPlanMatch) {
+    const planId = decodeURIComponent(startPlanMatch[1]);
+
+    const planResult = await pool.query(
+      `SELECT *
+         FROM planned_activities
+        WHERE id = $1
+        LIMIT 1`,
+      [planId]
+    );
+
+    const plan = planResult.rows[0];
+
+    if (!plan) {
+      sendJson(res, 404, { error: "Planejamento não encontrado." });
+      return true;
+    }
+
+    const plannedDay = typeof plan.planned_date === "string"
+      ? plan.planned_date
+      : new Intl.DateTimeFormat("en-CA", {
+          timeZone: TIME_ZONE,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).format(new Date(plan.planned_date));
+
+    if (plannedDay !== currentDateKey()) {
+      sendJson(res, 400, {
+        error: "Essa atividade só pode ser iniciada no dia planejado."
+      });
+      return true;
+    }
+
+    const existing = await getActive();
+
+    if (existing) {
+      sendJson(res, 409, {
+        error: "Já existe uma atividade em andamento."
+      });
+      return true;
+    }
+
+    const activityId = randomUUID();
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      await client.query(
+        `INSERT INTO activities
+          (id, title, status, started_at, last_started_at, accumulated_ms, subtasks)
+         VALUES ($1, $2, 'active', NOW(), NOW(), 0, '[]'::jsonb)`,
+        [activityId, plan.title]
+      );
+
+      if (String(plan.notes || "").trim()) {
+        await client.query(
+          `INSERT INTO activity_notes
+            (activity_id, notes, updated_at)
+           VALUES ($1, $2, NOW())
+           ON CONFLICT (activity_id)
+           DO UPDATE SET notes = EXCLUDED.notes, updated_at = NOW()`,
+          [activityId, plan.notes]
+        );
+      }
+
+      await client.query(
+        `DELETE FROM planned_activities
+          WHERE id = $1`,
+        [planId]
+      );
+
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    sendJson(res, 201, {
+      active: mapActivity(await getActivityById(activityId))
+    });
+    return true;
+  }
+
   if (req.method === "POST" && url.pathname === "/api/manual") {
     const body = await readJson(req);
 
@@ -607,6 +827,47 @@ async function handleApi(req, res, url) {
       entry: mapActivity(await getActivityById(id))
     });
 
+    return true;
+  }
+
+  const reopenEntryMatch = url.pathname.match(/^\/api\/entries\/([^/]+)\/reopen$/);
+
+  if (req.method === "POST" && reopenEntryMatch) {
+    const id = decodeURIComponent(reopenEntryMatch[1]);
+
+    const existingActive = await getActive();
+
+    if (existingActive) {
+      sendJson(res, 409, {
+        error: "Conclua ou pause a atividade atual antes de reabrir outra."
+      });
+      return true;
+    }
+
+    const result = await pool.query(
+      `UPDATE activities
+          SET status = 'active',
+              ended_at = NULL,
+              last_started_at = NOW(),
+              accumulated_ms = COALESCE(duration_ms, accumulated_ms, 0),
+              duration_ms = NULL,
+              updated_at = NOW()
+        WHERE id = $1
+          AND status = 'completed'
+        RETURNING id`,
+      [id]
+    );
+
+    if (!result.rows.length) {
+      sendJson(res, 404, {
+        error: "Registro concluído não encontrado."
+      });
+      return true;
+    }
+
+    sendJson(res, 200, {
+      active: mapActivity(await getActivityById(id))
+    });
     return true;
   }
 

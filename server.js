@@ -402,7 +402,14 @@ async function handleApi(req, res, url) {
     const start = `${year}-01-01`;
     const end = `${year + 1}-01-01`;
 
-    const [transactionsResult, categoriesResult, budgetsResult, yearResult] = await Promise.all([
+    const [
+      transactionsResult,
+      categoriesResult,
+      budgetsResult,
+      yearResult,
+      reserveAccountsResult,
+      reserveTransfersResult
+    ] = await Promise.all([
       pool.query(
         `SELECT id, TO_CHAR(transaction_date, 'YYYY-MM-DD') AS transaction_date, type, nature, amount, category_id, status, description
            FROM ld4_finance_transactions
@@ -430,6 +437,52 @@ async function handleApi(req, res, url) {
           WHERE year = $1
           LIMIT 1`,
         [year]
+      ),
+      pool.query(
+        `SELECT
+           a.id,
+           a.name,
+           a.opening_balance,
+           a.sort_order,
+           a.opening_balance
+             + COALESCE(SUM(
+                 CASE
+                   WHEN t.transfer_date < $1::date
+                    AND t.status = 'realized'
+                   THEN CASE WHEN t.direction = 'to_reserve' THEN t.amount ELSE -t.amount END
+                   ELSE 0
+                 END
+               ), 0) AS opening_real,
+           a.opening_balance
+             + COALESCE(SUM(
+                 CASE
+                   WHEN t.transfer_date < $1::date
+                   THEN CASE WHEN t.direction = 'to_reserve' THEN t.amount ELSE -t.amount END
+                   ELSE 0
+                 END
+               ), 0) AS opening_projected
+         FROM ld4_finance_reserve_accounts a
+         LEFT JOIN ld4_finance_reserve_transfers t
+           ON t.account_id = a.id
+        WHERE a.active = TRUE
+        GROUP BY a.id, a.name, a.opening_balance, a.sort_order
+        ORDER BY a.sort_order ASC, a.name ASC`,
+        [start]
+      ),
+      pool.query(
+        `SELECT
+           t.id,
+           TO_CHAR(t.transfer_date, 'YYYY-MM-DD') AS transfer_date,
+           t.account_id,
+           t.direction,
+           t.amount,
+           t.status,
+           t.description
+         FROM ld4_finance_reserve_transfers t
+        WHERE t.transfer_date >= $1::date
+          AND t.transfer_date < $2::date
+        ORDER BY t.transfer_date ASC, t.created_at ASC`,
+        [start, end]
       )
     ]);
 
@@ -466,7 +519,31 @@ async function handleApi(req, res, url) {
         category: row.category_id,
         amount: Number(row.amount || 0)
       })),
-      transactions
+      transactions,
+      reserveAccounts: reserveAccountsResult.rows.map(row => ({
+        id: row.id,
+        name: row.name,
+        openingBalance: Number(row.opening_balance || 0),
+        openingReal: Number(row.opening_real || 0),
+        openingProjected: Number(row.opening_projected || 0),
+        sortOrder: Number(row.sort_order || 0)
+      })),
+      reserveTransfers: reserveTransfersResult.rows.map(row => {
+        const date = String(row.transfer_date).slice(0, 10);
+        const [y, m, d] = date.split("-").map(Number);
+
+        return {
+          id: row.id,
+          year: y,
+          month: m - 1,
+          day: d,
+          account: row.account_id,
+          direction: row.direction,
+          value: Number(row.amount || 0),
+          status: row.status,
+          description: row.description || ""
+        };
+      })
     });
     return true;
   }
@@ -599,6 +676,228 @@ async function handleApi(req, res, url) {
         sortOrder: Number(result.rows[0].sort_order || 0)
       }
     });
+    return true;
+  }
+
+
+  if (req.method === "POST" && url.pathname === "/api/finance/reserve-accounts") {
+    const body = await readJson(req);
+    const name = String(body.name || "").trim().slice(0, 120);
+    const openingBalance = Number(body.openingBalance || 0);
+
+    if (!name || !Number.isFinite(openingBalance) || openingBalance < 0) {
+      sendJson(res, 400, { error: "Reserva inválida." });
+      return true;
+    }
+
+    const duplicate = await pool.query(
+      `SELECT id
+         FROM ld4_finance_reserve_accounts
+        WHERE LOWER(name) = LOWER($1)
+        LIMIT 1`,
+      [name]
+    );
+
+    if (duplicate.rows.length) {
+      sendJson(res, 409, { error: "Já existe uma reserva com esse nome." });
+      return true;
+    }
+
+    const orderResult = await pool.query(
+      `SELECT COALESCE(MAX(sort_order), 0) + 10 AS next_order
+         FROM ld4_finance_reserve_accounts`
+    );
+
+    const id = randomUUID();
+    const sortOrder = Number(orderResult.rows[0]?.next_order || 10);
+
+    const result = await pool.query(
+      `INSERT INTO ld4_finance_reserve_accounts
+        (id, name, opening_balance, sort_order, active, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, TRUE, NOW(), NOW())
+       RETURNING id, name, opening_balance, sort_order`,
+      [id, name, openingBalance, sortOrder]
+    );
+
+    sendJson(res, 201, {
+      account: {
+        id: result.rows[0].id,
+        name: result.rows[0].name,
+        openingBalance: Number(result.rows[0].opening_balance || 0),
+        sortOrder: Number(result.rows[0].sort_order || 0)
+      }
+    });
+    return true;
+  }
+
+  const reserveAccountMatch = url.pathname.match(/^\/api\/finance\/reserve-accounts\/([^/]+)$/);
+
+  if (req.method === "PUT" && reserveAccountMatch) {
+    const id = decodeURIComponent(reserveAccountMatch[1]);
+    const body = await readJson(req);
+    const name = String(body.name || "").trim().slice(0, 120);
+    const openingBalance = Number(body.openingBalance || 0);
+
+    if (!name || !Number.isFinite(openingBalance) || openingBalance < 0) {
+      sendJson(res, 400, { error: "Reserva inválida." });
+      return true;
+    }
+
+    const duplicate = await pool.query(
+      `SELECT id
+         FROM ld4_finance_reserve_accounts
+        WHERE LOWER(name) = LOWER($1)
+          AND id <> $2
+        LIMIT 1`,
+      [name, id]
+    );
+
+    if (duplicate.rows.length) {
+      sendJson(res, 409, { error: "Já existe uma reserva com esse nome." });
+      return true;
+    }
+
+    const result = await pool.query(
+      `UPDATE ld4_finance_reserve_accounts
+          SET name = $2,
+              opening_balance = $3,
+              updated_at = NOW()
+        WHERE id = $1
+          AND active = TRUE
+        RETURNING id, name, opening_balance, sort_order`,
+      [id, name, openingBalance]
+    );
+
+    if (!result.rows.length) {
+      sendJson(res, 404, { error: "Reserva não encontrada." });
+      return true;
+    }
+
+    sendJson(res, 200, {
+      account: {
+        id: result.rows[0].id,
+        name: result.rows[0].name,
+        openingBalance: Number(result.rows[0].opening_balance || 0),
+        sortOrder: Number(result.rows[0].sort_order || 0)
+      }
+    });
+    return true;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/finance/reserve-transfers") {
+    const body = await readJson(req);
+    const year = Number(body.year);
+    const month = Number(body.month) + 1;
+    const day = Number(body.day);
+    const account = String(body.account || "");
+    const direction = String(body.direction || "");
+    const amount = Number(body.value);
+    const status = String(body.status || "");
+    const description = cleanFinanceDescription(body.description);
+
+    if (
+      !validFinanceDate(year, month, day) ||
+      !account ||
+      !["to_reserve", "from_reserve"].includes(direction) ||
+      !Number.isFinite(amount) ||
+      amount <= 0 ||
+      !["provisioned", "realized"].includes(status)
+    ) {
+      sendJson(res, 400, { error: "Transferência inválida." });
+      return true;
+    }
+
+    const accountExists = await pool.query(
+      `SELECT id
+         FROM ld4_finance_reserve_accounts
+        WHERE id = $1
+          AND active = TRUE
+        LIMIT 1`,
+      [account]
+    );
+
+    if (!accountExists.rows.length) {
+      sendJson(res, 404, { error: "Reserva não encontrada." });
+      return true;
+    }
+
+    const result = await pool.query(
+      `INSERT INTO ld4_finance_reserve_transfers
+        (id, transfer_date, account_id, direction, amount, status, description)
+       VALUES ($1, $2::date, $3, $4, $5, $6, $7)
+       RETURNING id`,
+      [randomUUID(), financeDateKey(year, month, day), account, direction, amount, status, description]
+    );
+
+    sendJson(res, 201, { id: result.rows[0].id });
+    return true;
+  }
+
+  const reserveTransferMatch = url.pathname.match(/^\/api\/finance\/reserve-transfers\/([^/]+)$/);
+
+  if (req.method === "PUT" && reserveTransferMatch) {
+    const id = decodeURIComponent(reserveTransferMatch[1]);
+    const body = await readJson(req);
+    const year = Number(body.year);
+    const month = Number(body.month) + 1;
+    const day = Number(body.day);
+    const account = String(body.account || "");
+    const direction = String(body.direction || "");
+    const amount = Number(body.value);
+    const status = String(body.status || "");
+    const description = cleanFinanceDescription(body.description);
+
+    if (
+      !validFinanceDate(year, month, day) ||
+      !account ||
+      !["to_reserve", "from_reserve"].includes(direction) ||
+      !Number.isFinite(amount) ||
+      amount <= 0 ||
+      !["provisioned", "realized"].includes(status)
+    ) {
+      sendJson(res, 400, { error: "Transferência inválida." });
+      return true;
+    }
+
+    const result = await pool.query(
+      `UPDATE ld4_finance_reserve_transfers
+          SET transfer_date = $2::date,
+              account_id = $3,
+              direction = $4,
+              amount = $5,
+              status = $6,
+              description = $7,
+              updated_at = NOW()
+        WHERE id = $1
+        RETURNING id`,
+      [id, financeDateKey(year, month, day), account, direction, amount, status, description]
+    );
+
+    if (!result.rows.length) {
+      sendJson(res, 404, { error: "Transferência não encontrada." });
+      return true;
+    }
+
+    sendJson(res, 200, { id: result.rows[0].id });
+    return true;
+  }
+
+  if (req.method === "DELETE" && reserveTransferMatch) {
+    const id = decodeURIComponent(reserveTransferMatch[1]);
+
+    const result = await pool.query(
+      `DELETE FROM ld4_finance_reserve_transfers
+        WHERE id = $1
+        RETURNING id`,
+      [id]
+    );
+
+    if (!result.rows.length) {
+      sendJson(res, 404, { error: "Transferência não encontrada." });
+      return true;
+    }
+
+    sendJson(res, 200, { ok: true });
     return true;
   }
 

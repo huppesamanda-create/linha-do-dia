@@ -98,3 +98,35 @@ VALUES
   ('dividas', 'Dívidas', 80),
   ('outros', 'Outros', 90)
 ON CONFLICT (id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS ld4_finance_reserve_accounts (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  opening_balance NUMERIC(14,2) NOT NULL DEFAULT 0 CHECK (opening_balance >= 0),
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS ld4_finance_reserve_transfers (
+  id TEXT PRIMARY KEY,
+  transfer_date DATE NOT NULL,
+  account_id TEXT NOT NULL REFERENCES ld4_finance_reserve_accounts(id),
+  direction TEXT NOT NULL CHECK (direction IN ('to_reserve', 'from_reserve')),
+  amount NUMERIC(14,2) NOT NULL CHECK (amount > 0),
+  status TEXT NOT NULL CHECK (status IN ('provisioned', 'realized')),
+  description TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS ld4_finance_reserve_transfers_date_idx
+  ON ld4_finance_reserve_transfers(transfer_date);
+
+CREATE INDEX IF NOT EXISTS ld4_finance_reserve_transfers_account_idx
+  ON ld4_finance_reserve_transfers(account_id);
+
+INSERT INTO ld4_finance_reserve_accounts (id, name, opening_balance, sort_order)
+VALUES ('investimentos', 'Investimentos', 0, 10)
+ON CONFLICT (id) DO NOTHING;

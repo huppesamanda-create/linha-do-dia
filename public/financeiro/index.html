@@ -71,8 +71,8 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
 }
 .annual-scroll.dragging{cursor:grabbing}
 .annual-scroll::-webkit-scrollbar{height:9px}.annual-scroll::-webkit-scrollbar-track{background:#090909}.annual-scroll::-webkit-scrollbar-thumb{background:#242424;border-radius:99px}
-.annual-table{border-collapse:separate;border-spacing:0;table-layout:fixed;min-width:8200px}
-.annual-table col.date{width:46px}.annual-table col.money{width:112px}
+.annual-table{border-collapse:separate;border-spacing:0;table-layout:fixed;min-width:9800px}
+.annual-table col.date{width:46px}.annual-table col.money{width:106px}.annual-table col.reserve{width:96px}
 .month-head th{
   height:23px;border-right:1px solid #202020;border-bottom:1px solid #202020;color:#777;font-size:8.5px;font-weight:800;
   letter-spacing:.08em;text-transform:uppercase;text-align:center;background:#050505;cursor:pointer;position:sticky;top:0;z-index:3
@@ -91,6 +91,20 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
 .annual-table tr:hover td{background:#080808}
 .annual-table td.month-end,.annual-table th.month-end{border-right:1px solid #292929}
 .annual-table td.real-in{color:#a0b49d}.annual-table td.real-out{color:#ad8585}.annual-table td.provisioned{color:#8d7d5d;font-style:italic}
+.annual-table td.reserve-move{color:#7f8f9e}
+.annual-table td.reserve-move.provisioned{color:#6e7480}
+.reserve-grid{margin-top:34px;border-top:1px solid #1c1c1c;padding-top:22px}
+.reserve-title-line{display:flex;align-items:center;gap:8px}
+.reserve-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.reserve-list{border-top:1px solid #1b1b1b;margin-top:15px}
+.reserve-row{display:grid;grid-template-columns:minmax(0,1fr) 130px 130px;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid #101010}
+.reserve-row strong{color:#aaa;font-size:11px}
+.reserve-row small{display:block;margin-top:2px;color:#4c4c4c;font-size:8px}
+.reserve-value{text-align:right;font-size:10px;color:#858585;font-variant-numeric:tabular-nums}
+.reserve-value b{display:block;color:#a6b3a3;font-size:12px}
+.reserve-manager-row{display:grid;grid-template-columns:minmax(0,1fr) 135px auto;gap:9px;align-items:end;padding:10px 0;border-bottom:1px solid #111}
+.reserve-manager-note{color:#4c4c4c;font-size:9px;line-height:1.5;margin-top:9px}
+
 .annual-table td.balance-positive{color:#9fb29d}
 .annual-table td.balance-warning{color:#d1b06d;background:rgba(165,130,65,.13)!important}
 .annual-table td.balance-negative{color:#d38d8d;background:rgba(160,65,65,.17)!important}
@@ -178,13 +192,13 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
 <header class="topbar">
   <div><div class="kicker">Linha do Dia</div><h1>Financeiro</h1></div>
   <div class="topright">
-    <a class="home-link" href="#">Hoje</a>
+    <a class="home-link" href="/">Hoje</a>
     <div class="menu-wrap">
       <button class="menu-button" id="menuButton" aria-label="Abrir menu">···</button>
       <nav class="menu" id="menu">
-        <a href="#"><span>Linha do Dia</span><span>⌂</span></a>
-        <a href="#"><span>ENAM</span><span>↗</span></a>
-        <a href="#" class="active"><span>Financeiro</span><span>•</span></a>
+        <a href="/"><span>Linha do Dia</span><span>⌂</span></a>
+        <a href="/enam/"><span>ENAM</span><span>↗</span></a>
+        <a href="/financeiro/" class="active"><span>Financeiro</span><span>•</span></a>
       </nav>
     </div>
   </div>
@@ -196,7 +210,7 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
   <div>
     <div class="kicker">Fluxo de caixa anual</div>
     <h2>Visão dos 12 meses</h2>
-    <p>Clique diretamente em uma célula de Saída ou Diário para testar um gasto. Enquanto você digita, o futuro é recalculado.</p>
+    <p>Clique em Entrada, Saída ou Diário para lançar e testar valores. A coluna Reserva tira dinheiro do disponível sem transformar isso em gasto.</p>
   </div>
   <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
     <div class="year-switch">
@@ -205,16 +219,17 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
     <div class="quick-actions">
       <button class="btn" id="addIncome">+ entrada</button>
       <button class="btn primary" id="addExpense">+ gasto</button>
+      <button class="btn" id="addReserve">↗ guardar</button>
     </div>
   </div>
 </div>
 
 <section class="metrics">
   <div class="metric"><label>Mês selecionado</label><strong id="mMonth">Agosto</strong><small>clique no mês na grade</small></div>
-  <div class="metric"><label>Saldo real</label><strong class="good" id="mReal">R$ 0,00</strong><small>somente realizados</small></div>
-  <div class="metric"><label>Saldo projetado</label><strong id="mProjected">R$ 0,00</strong><small>inclui provisões e simulação</small></div>
-  <div class="metric"><label>Entradas</label><strong id="mIncome">R$ 0,00</strong><small id="mIncomeSub">no mês selecionado</small></div>
-  <div class="metric"><label>Saídas</label><strong class="bad" id="mExpense">R$ 0,00</strong><small id="mExpenseSub">no mês selecionado</small></div>
+  <div class="metric"><label>Saldo disponível</label><strong class="good" id="mReal">R$ 0,00</strong><small>dinheiro livre hoje</small></div>
+  <div class="metric"><label>Saldo projetado</label><strong id="mProjected">R$ 0,00</strong><small>disponível após provisões</small></div>
+  <div class="metric"><label>Reservas e investimentos</label><strong id="mReserves">R$ 0,00</strong><small id="mReservesSub">valor guardado</small></div>
+  <div class="metric"><label>Patrimônio financeiro</label><strong id="mNetWorth">R$ 0,00</strong><small id="mNetWorthSub">disponível + guardado</small></div>
 </section>
 
 <div class="safety-row">
@@ -288,6 +303,28 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
     </div>
   </aside>
 </div>
+
+<section class="reserve-grid">
+  <div class="section-title">
+    <div class="kicker">Patrimônio separado do dinheiro de gastar</div>
+    <div class="reserve-title-line">
+      <h2>Reservas e investimentos</h2>
+      <button
+        class="category-manager-button"
+        id="reserveManagerButton"
+        type="button"
+        title="Gerenciar reservas"
+        aria-label="Gerenciar reservas e investimentos"
+      >···</button>
+    </div>
+    <p>Guardar reduz o saldo disponível, mas não conta como despesa. Resgatar faz o caminho contrário.</p>
+    <div class="reserve-actions">
+      <button class="btn" id="reserveDepositButton" type="button">↗ Guardar dinheiro</button>
+      <button class="btn" id="reserveWithdrawButton" type="button">↙ Resgatar</button>
+    </div>
+  </div>
+  <div class="reserve-list" id="reserveList"></div>
+</section>
 </main>
 
 <div class="modal-backdrop" id="modalBackdrop">
@@ -310,6 +347,44 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
 </form>
 </div>
 
+
+
+<div class="modal-backdrop" id="reserveTransferModalBackdrop">
+<form class="modal" id="reserveTransferForm">
+  <div class="modal-head">
+    <div><div class="kicker">Transferência patrimonial</div><h3 id="reserveTransferTitle">Guardar dinheiro</h3></div>
+    <button class="close" type="button" id="closeReserveTransferModal">×</button>
+  </div>
+  <div class="form-grid">
+    <div class="field"><label>Mês</label><select id="rMonth"></select></div>
+    <div class="field"><label>Dia</label><input id="rDay" type="number" min="1" max="31" required></div>
+    <div class="field"><label>Valor</label><input id="rValue" type="number" step="0.01" min="0" required></div>
+    <div class="field"><label>Reserva</label><select id="rAccount"></select></div>
+    <div class="field"><label>Movimento</label><select id="rDirection"><option value="to_reserve">Guardar</option><option value="from_reserve">Resgatar</option></select></div>
+    <div class="field"><label>Situação</label><select id="rStatus"><option value="realized">Realizado</option><option value="provisioned">Provisionado</option></select></div>
+    <div class="field full"><label>Descrição</label><input id="rDescription" type="text" placeholder="Ex.: aporte mensal, reserva da viagem..."></div>
+  </div>
+  <div class="helper">Guardar reduz o saldo disponível e aumenta a reserva pelo mesmo valor. Não entra nas despesas do mês.</div>
+  <div class="modal-actions"><button class="btn" type="button" id="cancelReserveTransfer">Cancelar</button><button class="btn primary" type="submit">Salvar</button></div>
+</form>
+</div>
+
+<div class="modal-backdrop" id="reserveManagerModalBackdrop">
+  <section class="modal" aria-labelledby="reserveManagerTitle">
+    <div class="modal-head">
+      <div><div class="kicker">Dinheiro já separado</div><h3 id="reserveManagerTitle">Reservas e investimentos</h3></div>
+      <button class="close" type="button" id="closeReserveManagerModal">×</button>
+    </div>
+    <div class="category-manager-list" id="reserveManagerList"></div>
+    <div class="new-category-row">
+      <input id="newReserveName" type="text" maxlength="120" placeholder="Nova reserva">
+      <input id="newReserveOpening" type="number" min="0" step="100" placeholder="Saldo já guardado" style="max-width:150px">
+      <button class="btn" id="createReserveButton" type="button">Criar</button>
+    </div>
+    <div class="reserve-manager-note">“Saldo já guardado” serve para cadastrar o dinheiro que já estava fora do seu saldo disponível antes de começar a usar este módulo. Ele não é tratado como gasto.</div>
+    <div class="inline-error" id="reserveManagerError"></div>
+  </section>
+</div>
 
 <div class="modal-backdrop" id="categoryModalBackdrop">
   <section class="modal" aria-labelledby="categoryModalTitle">
@@ -356,7 +431,10 @@ let testDraft=null;
 let transactions=[];
 let categories=[];
 let budgets=[];
+let reserveAccounts=[];
+let reserveTransfers=[];
 let editingTransactionId=null;
+let editingReserveTransferId=null;
 let savingTest=false;
 let formMode='expense';
 
@@ -379,6 +457,12 @@ function txDay(m,d){return txMonth(m).filter(t=>t.day===d)}
 function sum(v){return v.reduce((a,b)=>a+Number(b||0),0)}
 function categoryName(id){return categories.find(c=>c.id===id)?.name||'—'}
 function budgetAmount(month,category){return Number(budgets.find(b=>b.month===month&&b.category===category)?.amount||0)}
+function reserveName(id){return reserveAccounts.find(a=>a.id===id)?.name||'Reserva'}
+function reserveMonth(m){return reserveTransfers.filter(t=>t.year===currentYear&&t.month===m)}
+function reserveDay(m,d){return reserveMonth(m).filter(t=>t.day===d)}
+function reserveOpeningReal(){return sum(reserveAccounts.map(a=>a.openingReal))}
+function reserveOpeningProjected(){return sum(reserveAccounts.map(a=>a.openingProjected))}
+
 function draftApplies(m,d){if(!testDraft||testDraft.year!==currentYear)return false;return m>testDraft.month||(m===testDraft.month&&d>=testDraft.day)}
 function draftOnCell(m,d,type,nature=null){
   return Boolean(
@@ -392,27 +476,76 @@ function draftOnCell(m,d,type,nature=null){
 }
 
 function buildCashModel(){
-  const daily=[];let projected=yearOpeningBalance;let real=yearOpeningBalance;const monthStats=[];
+  const daily=[];
+  let projected=yearOpeningBalance;
+  let real=yearOpeningBalance;
+  let reserveProjected=reserveOpeningProjected();
+  let reserveReal=reserveOpeningReal();
+  const monthStats=[];
+
   for(let m=0;m<12;m++){
-    const startProjected=projected,startReal=real;let incomeReal=0,incomeProv=0,expReal=0,expProv=0,fixed=0,dailyOut=0;
+    const startProjected=projected,startReal=real;
+    const reserveStartProjected=reserveProjected,reserveStartReal=reserveReal;
+    let incomeReal=0,incomeProv=0,expReal=0,expProv=0,fixed=0,dailyOut=0,reserveTo=0,reserveFrom=0;
+
     for(let d=1;d<=daysInMonth(m);d++){
-      const items=txDay(m,d),incomes=items.filter(t=>t.type==='income'),expenses=items.filter(t=>t.type==='expense');
-      const incomeAll=sum(incomes.map(t=>t.value)),expenseAll=sum(expenses.map(t=>t.value));
+      const items=txDay(m,d);
+      const incomes=items.filter(t=>t.type==='income');
+      const expenses=items.filter(t=>t.type==='expense');
+      const incomeAll=sum(incomes.map(t=>t.value));
+      const expenseAll=sum(expenses.map(t=>t.value));
       const realIncome=sum(incomes.filter(t=>t.status==='realized').map(t=>t.value));
       const realExpense=sum(expenses.filter(t=>t.status==='realized').map(t=>t.value));
-      projected+=incomeAll-expenseAll;real+=realIncome-realExpense;
-      incomeReal+=realIncome;incomeProv+=sum(incomes.filter(t=>t.status==='provisioned').map(t=>t.value));
-      expReal+=realExpense;expProv+=sum(expenses.filter(t=>t.status==='provisioned').map(t=>t.value));
-      fixed+=sum(expenses.filter(t=>t.nature==='fixed').map(t=>t.value));dailyOut+=sum(expenses.filter(t=>t.nature==='daily').map(t=>t.value));
+
+      projected+=incomeAll-expenseAll;
+      real+=realIncome-realExpense;
+
+      incomeReal+=realIncome;
+      incomeProv+=sum(incomes.filter(t=>t.status==='provisioned').map(t=>t.value));
+      expReal+=realExpense;
+      expProv+=sum(expenses.filter(t=>t.status==='provisioned').map(t=>t.value));
+      fixed+=sum(expenses.filter(t=>t.nature==='fixed').map(t=>t.value));
+      dailyOut+=sum(expenses.filter(t=>t.nature==='daily').map(t=>t.value));
+
+      const transfers=reserveDay(m,d);
+      transfers.forEach(t=>{
+        const signed=t.direction==='to_reserve'?Number(t.value):-Number(t.value);
+        reserveProjected+=signed;
+        projected-=signed;
+
+        if(t.status==='realized'){
+          reserveReal+=signed;
+          real-=signed
+        }
+
+        if(t.direction==='to_reserve')reserveTo+=Number(t.value);
+        else reserveFrom+=Number(t.value)
+      });
+
       if(testDraft&&testDraft.year===currentYear&&testDraft.month===m&&testDraft.day===d){
         const draftValue=Number(testDraft.value||0);
-        projected+=testDraft.type==='income'?draftValue:-draftValue;
+        projected+=testDraft.type==='income'?draftValue:-draftValue
       }
-      daily.push({month:m,day:d,projected,real});
+
+      daily.push({
+        month:m,day:d,projected,real,reserveProjected,reserveReal,
+        netWorthProjected:projected+reserveProjected,
+        netWorthReal:real+reserveReal
+      })
     }
-    monthStats.push({startProjected,startReal,incomeReal,incomeProv,expReal,expProv,fixed,daily:dailyOut,endProjected:projected,endReal:real});
+
+    monthStats.push({
+      startProjected,startReal,reserveStartProjected,reserveStartReal,
+      incomeReal,incomeProv,expReal,expProv,fixed,daily:dailyOut,
+      reserveTo,reserveFrom,
+      endProjected:projected,endReal:real,
+      reserveEndProjected:reserveProjected,reserveEndReal:reserveReal,
+      netWorthProjected:projected+reserveProjected,
+      netWorthReal:real+reserveReal
+    })
   }
-  return {daily,monthStats};
+
+  return {daily,monthStats}
 }
 function modelDay(model,m,d){return model.daily.find(x=>x.month===m&&x.day===d)}
 function balanceClass(value,simulated){let c=value<0?'balance-negative':value<warningThreshold?'balance-warning':'balance-positive';if(simulated)c+=' balance-simulated';return c}
@@ -422,27 +555,31 @@ function renderAll(){buildAnnualTable();renderSelectedMonth();renderTestBar();$(
 
 function buildAnnualTable(){
   const model=buildCashModel(),table=$('#annualTable');let cols='',h1='<tr class="month-head">',h2='<tr class="sub-head">';
-  for(let m=0;m<12;m++){cols+='<col class="date"><col class="money"><col class="money"><col class="money"><col class="money">';h1+=`<th colspan="5" data-month="${m}" class="${m===selectedMonth?'selected':''} month-end">${MONTHS[m]}</th>`;h2+='<th class="date-col">Data</th><th>Entrada</th><th>Saída</th><th>Diário</th><th class="month-end">Saldo</th>'}
+  for(let m=0;m<12;m++){cols+='<col class="date"><col class="money"><col class="money"><col class="money"><col class="reserve"><col class="money">';h1+=`<th colspan="6" data-month="${m}" class="${m===selectedMonth?'selected':''} month-end">${MONTHS[m]}</th>`;h2+='<th class="date-col">Data</th><th>Entrada</th><th>Saída</th><th>Diário</th><th>Reserva</th><th class="month-end">Saldo</th>'}
   h1+='</tr>';h2+='</tr>';let body='<tbody>';
   for(let d=1;d<=31;d++){
     body+='<tr>';
     for(let m=0;m<12;m++){
-      if(d>daysInMonth(m)){body+='<td class="date-col"></td><td></td><td></td><td></td><td class="month-end"></td>';continue}
+      if(d>daysInMonth(m)){body+='<td class="date-col"></td><td></td><td></td><td></td><td></td><td class="month-end"></td>';continue}
       const items=txDay(m,d),incomes=items.filter(t=>t.type==='income'),fixed=items.filter(t=>t.type==='expense'&&t.nature==='fixed'),daily=items.filter(t=>t.type==='expense'&&t.nature==='daily');
+      const transfers=reserveDay(m,d);
       const income=sum(incomes.map(t=>t.value)),fixedValue=sum(fixed.map(t=>t.value)),dailyValue=sum(daily.map(t=>t.value)),point=modelDay(model,m,d),simulated=draftApplies(m,d);
+      const reserveNet=sum(transfers.map(t=>t.direction==='to_reserve'?Number(t.value):-Number(t.value)));
       const incomeDraft=draftOnCell(m,d,'income');
       const fixedDraft=draftOnCell(m,d,'expense','fixed');
       const dailyDraft=draftOnCell(m,d,'expense','daily');
-      body+=`<td class="date-col ${items.length?'date-click':''}" data-month="${m}" data-day="${d}">${d}</td>
+      const hasAny=items.length||transfers.length;
+      body+=`<td class="date-col ${hasAny?'date-click':''}" data-month="${m}" data-day="${d}">${d}</td>
         <td class="entry-cell ${incomes.length?'has-entry ':''}${entryClass(incomes,'income')}" data-cell-month="${m}" data-cell-day="${d}" data-cell-type="income" data-has-entry="${incomes.length?'1':'0'}" title="${incomes.length?'Abrir lançamento':'Lançar entrada'}">${incomeDraft?`<input class="inline-test-input" data-inline-test value="${testDraft.value||''}" inputmode="decimal">`:income?BRL.format(income):''}</td>
         <td class="entry-cell ${fixed.length?'has-entry ':''}${entryClass(fixed,'expense')}" data-cell-month="${m}" data-cell-day="${d}" data-cell-type="expense" data-cell-nature="fixed" data-has-entry="${fixed.length?'1':'0'}" title="${fixed.length?'Abrir lançamento':'Lançar saída'}">${fixedDraft?`<input class="inline-test-input" data-inline-test value="${testDraft.value||''}" inputmode="decimal">`:fixedValue?BRL.format(fixedValue):''}</td>
         <td class="entry-cell ${daily.length?'has-entry ':''}${entryClass(daily,'expense')}" data-cell-month="${m}" data-cell-day="${d}" data-cell-type="expense" data-cell-nature="daily" data-has-entry="${daily.length?'1':'0'}" title="${daily.length?'Abrir lançamento':'Lançar diário'}">${dailyDraft?`<input class="inline-test-input" data-inline-test value="${testDraft.value||''}" inputmode="decimal">`:dailyValue?BRL.format(dailyValue):''}</td>
+        <td class="entry-cell reserve-move ${transfers.length?'has-entry ':''}${transfers.some(t=>t.status==='provisioned')?'provisioned':''}" data-reserve-month="${m}" data-reserve-day="${d}" data-has-reserve="${transfers.length?'1':'0'}" title="${transfers.length?'Abrir transferência':'Guardar ou resgatar'}">${reserveNet?`${reserveNet>0?'↗':'↙'} ${BRL.format(Math.abs(reserveNet))}`:''}</td>
         <td class="month-end ${balanceClass(point.projected,simulated)}">${BRL.format(point.projected)}</td>`;
     }
     body+='</tr>';
   }
   body+='</tbody>';let foot='<tfoot><tr class="month-footer">';
-  model.monthStats.forEach(t=>{foot+=`<td class="date-col">total</td><td>${t.incomeReal+t.incomeProv?BRL.format(t.incomeReal+t.incomeProv):''}</td><td>${t.fixed?BRL.format(t.fixed):''}</td><td>${t.daily?BRL.format(t.daily):''}</td><td class="month-end ${balanceClass(t.endProjected,false)}">${BRL.format(t.endProjected)}</td>`});
+  model.monthStats.forEach(t=>{const reserveNet=t.reserveTo-t.reserveFrom;foot+=`<td class="date-col">total</td><td>${t.incomeReal+t.incomeProv?BRL.format(t.incomeReal+t.incomeProv):''}</td><td>${t.fixed?BRL.format(t.fixed):''}</td><td>${t.daily?BRL.format(t.daily):''}</td><td>${reserveNet?`${reserveNet>0?'↗':'↙'} ${BRL.format(Math.abs(reserveNet))}`:''}</td><td class="month-end ${balanceClass(t.endProjected,false)}">${BRL.format(t.endProjected)}</td>`});
   foot+='</tr></tfoot>';table.innerHTML=`<colgroup>${cols}</colgroup><thead>${h1}${h2}</thead>${body}${foot}`;
   table.querySelectorAll('.month-head th').forEach(th=>th.addEventListener('click',()=>{selectedMonth=Number(th.dataset.month);renderAll()}));
   table.querySelectorAll('.date-click').forEach(td=>td.addEventListener('click',()=>openDrawer(Number(td.dataset.month),Number(td.dataset.day))));
@@ -464,12 +601,17 @@ function buildAnnualTable(){
       td.dataset.cellNature||null
     )
   }));
+  table.querySelectorAll('[data-reserve-month]').forEach(td=>td.addEventListener('click',()=>{
+    const month=Number(td.dataset.reserveMonth),day=Number(td.dataset.reserveDay);
+    if(td.dataset.hasReserve==='1')openDrawer(month,day);
+    else openReserveTransferModal('to_reserve',month,day)
+  }));
   const input=table.querySelector('[data-inline-test]');
   if(input){input.focus();input.select();input.addEventListener('input',()=>{testDraft.value=Math.max(0,Number(input.value.replace(',','.'))||0);renderPreviewWithoutReplacingInput()});input.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();discardTest()}if(e.key==='Enter'){e.preventDefault();openSaveTestModal()}})}
 }
 
 function renderPreviewWithoutReplacingInput(){
-  const model=buildCashModel();document.querySelectorAll('.annual-table tbody tr').forEach((tr,rowIndex)=>{const day=rowIndex+1,cells=[...tr.children];for(let m=0;m<12;m++){const balanceCell=cells[m*5+4];if(!balanceCell||day>daysInMonth(m))continue;const point=modelDay(model,m,day);balanceCell.textContent=BRL.format(point.projected);balanceCell.className=`month-end ${balanceClass(point.projected,draftApplies(m,day))}`}});renderSelectedMonth();renderTestBar()
+  const model=buildCashModel();document.querySelectorAll('.annual-table tbody tr').forEach((tr,rowIndex)=>{const day=rowIndex+1,cells=[...tr.children];for(let m=0;m<12;m++){const balanceCell=cells[m*6+5];if(!balanceCell||day>daysInMonth(m))continue;const point=modelDay(model,m,day);balanceCell.textContent=BRL.format(point.projected);balanceCell.className=`month-end ${balanceClass(point.projected,draftApplies(m,day))}`}});renderSelectedMonth();renderTestBar()
 }
 function beginInlineTest(month,day,type,nature=null){
   testDraft={year:currentYear,month,day,type,nature,value:0};
@@ -483,7 +625,24 @@ function renderTestBar(){const bar=$('#testBar'),status=$('#simulationStatus');i
   $('#testCopy').innerHTML=`Teste: <strong>${BRL.format(Number(testDraft.value||0))}</strong> em ${testDraft.day} de ${MONTHS[testDraft.month].toLowerCase()} · ${kind}. As células à frente já mostram o impacto.`}
 
 function renderSelectedMonth(){
-  const model=buildCashModel(),t=model.monthStats[selectedMonth];$('#mMonth').textContent=MONTHS[selectedMonth];$('#mReal').textContent=BRL.format(t.endReal);$('#mProjected').textContent=BRL.format(t.endProjected);$('#mProjected').className=t.endProjected<0?'bad':t.endProjected<warningThreshold?'warn':'';$('#mIncome').textContent=BRL.format(t.incomeReal+t.incomeProv);$('#mIncomeSub').textContent=t.incomeProv?`${BRL.format(t.incomeProv)} provisionados`:'todas realizadas';$('#mExpense').textContent=BRL.format(t.expReal+t.expProv+(testDraft?.month===selectedMonth&&testDraft.type==='expense'?Number(testDraft.value||0):0));$('#mExpenseSub').textContent=testDraft?.month===selectedMonth?'inclui a simulação atual':t.expProv?`${BRL.format(t.expProv)} provisionados`:'todas realizadas';$('#budgetMonth').textContent=MONTHS[selectedMonth];$('#summaryMonth').textContent=MONTHS[selectedMonth];$('#sIncome').textContent=BRL.format(t.incomeReal);$('#sRealExpenses').textContent=BRL.format(t.expReal);$('#sProvExpenses').textContent=BRL.format(t.expProv);$('#sPerformance').textContent=BRL.format(t.incomeReal-t.expReal);$('#sProjected').textContent=BRL.format(t.endProjected);renderBudgets()
+  const model=buildCashModel(),t=model.monthStats[selectedMonth];
+  $('#mMonth').textContent=MONTHS[selectedMonth];
+  $('#mReal').textContent=BRL.format(t.endReal);
+  $('#mProjected').textContent=BRL.format(t.endProjected);
+  $('#mProjected').className=t.endProjected<0?'bad':t.endProjected<warningThreshold?'warn':'';
+  $('#mReserves').textContent=BRL.format(t.reserveEndReal);
+  $('#mReservesSub').textContent=t.reserveEndProjected!==t.reserveEndReal?`${BRL.format(t.reserveEndProjected)} projetados`:'valor guardado';
+  $('#mNetWorth').textContent=BRL.format(t.netWorthReal);
+  $('#mNetWorthSub').textContent=t.netWorthProjected!==t.netWorthReal?`${BRL.format(t.netWorthProjected)} projetados`:'disponível + guardado';
+  $('#budgetMonth').textContent=MONTHS[selectedMonth];
+  $('#summaryMonth').textContent=MONTHS[selectedMonth];
+  $('#sIncome').textContent=BRL.format(t.incomeReal);
+  $('#sRealExpenses').textContent=BRL.format(t.expReal);
+  $('#sProvExpenses').textContent=BRL.format(t.expProv);
+  $('#sPerformance').textContent=BRL.format(t.incomeReal-t.expReal);
+  $('#sProjected').textContent=BRL.format(t.endProjected);
+  renderBudgets();
+  renderReserves(model)
 }
 
 function renderBudgets(){
@@ -491,8 +650,35 @@ function renderBudgets(){
 }
 
 function openDrawer(month,day){
-  selectedMonth=month;renderSelectedMonth();const txs=txDay(month,day);$('#drawerTitle').textContent=`${day} de ${MONTHS[month].toLowerCase()}`;const list=$('#drawerList');list.innerHTML='';
-  txs.forEach(t=>{const div=document.createElement('div');div.className='mov';const kind=t.type==='income'?'Entrada':t.nature==='daily'?'Diário':'Saída';div.innerHTML=`<div class="mov-top"><span class="mov-title">${escapeHtml(t.description||kind)}</span><span class="mov-value ${t.type==='income'?'good':'bad'}">${t.type==='income'?'+ ':'- '}${BRL.format(t.value)}</span></div><div class="mov-meta">${kind}${t.type==='expense'?' · '+escapeHtml(categoryName(t.category)):''} · ${t.status==='realized'?'realizado':'provisionado'}</div><div class="mov-actions"><button type="button" class="mov-action edit">Editar</button><button type="button" class="mov-action delete">Excluir</button></div>`;div.querySelector('.edit').addEventListener('click',()=>openEditModal(t));div.querySelector('.delete').addEventListener('click',()=>deleteTransaction(t));list.appendChild(div)});
+  selectedMonth=month;
+  renderSelectedMonth();
+  const txs=txDay(month,day);
+  const transfers=reserveDay(month,day);
+  $('#drawerTitle').textContent=`${day} de ${MONTHS[month].toLowerCase()}`;
+  const list=$('#drawerList');
+  list.innerHTML='';
+
+  txs.forEach(t=>{
+    const div=document.createElement('div');
+    div.className='mov';
+    const kind=t.type==='income'?'Entrada':t.nature==='daily'?'Diário':'Saída';
+    div.innerHTML=`<div class="mov-top"><span class="mov-title">${escapeHtml(t.description||kind)}</span><span class="mov-value ${t.type==='income'?'good':'bad'}">${t.type==='income'?'+ ':'- '}${BRL.format(t.value)}</span></div><div class="mov-meta">${kind}${t.type==='expense'?' · '+escapeHtml(categoryName(t.category)):''} · ${t.status==='realized'?'realizado':'provisionado'}</div><div class="mov-actions"><button type="button" class="mov-action edit">Editar</button><button type="button" class="mov-action delete">Excluir</button></div>`;
+    div.querySelector('.edit').addEventListener('click',()=>openEditModal(t));
+    div.querySelector('.delete').addEventListener('click',()=>deleteTransaction(t));
+    list.appendChild(div)
+  });
+
+  transfers.forEach(t=>{
+    const div=document.createElement('div');
+    div.className='mov';
+    const going=t.direction==='to_reserve';
+    const label=going?'Guardado':'Resgatado';
+    div.innerHTML=`<div class="mov-top"><span class="mov-title">${escapeHtml(t.description||label+' · '+reserveName(t.account))}</span><span class="mov-value ${going?'':'good'}">${going?'↗':'↙'} ${BRL.format(t.value)}</span></div><div class="mov-meta">Transferência patrimonial · ${escapeHtml(reserveName(t.account))} · ${t.status==='realized'?'realizado':'provisionado'}</div><div class="mov-actions"><button type="button" class="mov-action edit">Editar</button><button type="button" class="mov-action delete">Excluir</button></div>`;
+    div.querySelector('.edit').addEventListener('click',()=>openReserveTransferEdit(t));
+    div.querySelector('.delete').addEventListener('click',()=>deleteReserveTransfer(t));
+    list.appendChild(div)
+  });
+
   $('#dayDrawer').classList.add('open')
 }
 $('#drawerClose').addEventListener('click',()=>$('#dayDrawer').classList.remove('open'));
@@ -643,6 +829,247 @@ $('#newCategoryName').addEventListener('keydown',e=>{
   }
 });
 
+
+function populateReserveSelect(){
+  const sel=$('#rAccount');
+  sel.innerHTML='';
+  reserveAccounts.forEach(a=>{
+    const o=document.createElement('option');
+    o.value=a.id;
+    o.textContent=a.name;
+    sel.appendChild(o)
+  })
+}
+
+function renderReserves(model=buildCashModel()){
+  const box=$('#reserveList');
+  box.innerHTML='';
+
+  if(!reserveAccounts.length){
+    box.innerHTML='<div class="helper" style="padding:12px 0">Nenhuma reserva cadastrada.</div>';
+    return
+  }
+
+  reserveAccounts.forEach(account=>{
+    let real=Number(account.openingReal||0);
+    let projected=Number(account.openingProjected||0);
+
+    reserveTransfers
+      .filter(t=>t.account===account.id)
+      .forEach(t=>{
+        const signed=t.direction==='to_reserve'?Number(t.value):-Number(t.value);
+        projected+=signed;
+        if(t.status==='realized')real+=signed
+      });
+
+    const row=document.createElement('div');
+    row.className='reserve-row';
+    row.innerHTML=`<div><strong>${escapeHtml(account.name)}</strong><small>dinheiro fora do saldo disponível</small></div><div class="reserve-value"><span>real</span><b>${BRL.format(real)}</b></div><div class="reserve-value"><span>projetado</span><b>${BRL.format(projected)}</b></div>`;
+    box.appendChild(row)
+  })
+}
+
+const reserveTransferModal=$('#reserveTransferModalBackdrop');
+const reserveManagerModal=$('#reserveManagerModalBackdrop');
+
+function openReserveTransferModal(direction='to_reserve',month=selectedMonth,day=''){
+  if(!reserveAccounts.length){
+    openReserveManager();
+    return
+  }
+
+  editingReserveTransferId=null;
+  $('#reserveTransferTitle').textContent=direction==='to_reserve'?'Guardar dinheiro':'Resgatar dinheiro';
+  $('#rDirection').value=direction;
+  $('#rMonth').value=String(month);
+  $('#rDay').value=day?String(day):'';
+  $('#rValue').value='';
+  $('#rStatus').value='realized';
+  $('#rDescription').value='';
+  populateReserveSelect();
+  reserveTransferModal.classList.add('open')
+}
+
+function openReserveTransferEdit(t){
+  editingReserveTransferId=t.id;
+  populateReserveSelect();
+  $('#reserveTransferTitle').textContent='Editar transferência';
+  $('#rMonth').value=String(t.month);
+  $('#rDay').value=String(t.day);
+  $('#rValue').value=String(t.value);
+  $('#rAccount').value=t.account;
+  $('#rDirection').value=t.direction;
+  $('#rStatus').value=t.status;
+  $('#rDescription').value=t.description||'';
+  $('#dayDrawer').classList.remove('open');
+  reserveTransferModal.classList.add('open')
+}
+
+async function deleteReserveTransfer(t){
+  if(!confirm('Excluir esta transferência?'))return;
+
+  try{
+    await api(`/api/finance/reserve-transfers/${encodeURIComponent(t.id)}`,{method:'DELETE'});
+    $('#dayDrawer').classList.remove('open');
+    await loadYear(currentYear,false)
+  }catch(e){
+    showError(e.message)
+  }
+}
+
+$('#reserveTransferForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+
+  const month=Number($('#rMonth').value);
+  const day=Number($('#rDay').value);
+  const value=Number($('#rValue').value);
+
+  if(!value||day<1||day>daysInMonth(month))return;
+
+  const payload={
+    year:currentYear,
+    month,
+    day,
+    value,
+    account:$('#rAccount').value,
+    direction:$('#rDirection').value,
+    status:$('#rStatus').value,
+    description:$('#rDescription').value.trim()
+  };
+
+  try{
+    if(editingReserveTransferId){
+      await api(`/api/finance/reserve-transfers/${encodeURIComponent(editingReserveTransferId)}`,{
+        method:'PUT',
+        body:JSON.stringify(payload)
+      })
+    }else{
+      await api('/api/finance/reserve-transfers',{
+        method:'POST',
+        body:JSON.stringify(payload)
+      })
+    }
+
+    selectedMonth=month;
+    reserveTransferModal.classList.remove('open');
+    await loadYear(currentYear,false);
+    scrollToMonth(month,false)
+  }catch(err){
+    showError(err.message)
+  }
+});
+
+function openReserveManager(){
+  $('#reserveManagerError').textContent='';
+  $('#newReserveName').value='';
+  $('#newReserveOpening').value='';
+  renderReserveManager();
+  reserveManagerModal.classList.add('open')
+}
+
+function renderReserveManager(){
+  const box=$('#reserveManagerList');
+  box.innerHTML='';
+
+  reserveAccounts.forEach(account=>{
+    const row=document.createElement('div');
+    row.className='reserve-manager-row';
+
+    const nameField=document.createElement('div');
+    nameField.className='field';
+    nameField.innerHTML='<label>Nome</label>';
+    const nameInput=document.createElement('input');
+    nameInput.value=account.name;
+    nameInput.maxLength=120;
+    nameField.appendChild(nameInput);
+
+    const balanceField=document.createElement('div');
+    balanceField.className='field';
+    balanceField.innerHTML='<label>Saldo já guardado</label>';
+    const balanceInput=document.createElement('input');
+    balanceInput.type='number';
+    balanceInput.min='0';
+    balanceInput.step='100';
+    balanceInput.value=String(account.openingBalance||0);
+    balanceField.appendChild(balanceInput);
+
+    const save=document.createElement('button');
+    save.type='button';
+    save.className='category-manager-save';
+    save.textContent='✓';
+    save.title='Salvar';
+
+    save.addEventListener('click',async()=>{
+      const name=nameInput.value.trim();
+      const openingBalance=Math.max(0,Number(balanceInput.value)||0);
+
+      if(!name){
+        $('#reserveManagerError').textContent='Informe o nome da reserva.';
+        return
+      }
+
+      save.disabled=true;
+      $('#reserveManagerError').textContent='';
+
+      try{
+        await api(`/api/finance/reserve-accounts/${encodeURIComponent(account.id)}`,{
+          method:'PUT',
+          body:JSON.stringify({name,openingBalance})
+        });
+        await loadYear(currentYear,false);
+        renderReserveManager()
+      }catch(error){
+        $('#reserveManagerError').textContent=error.message
+      }finally{
+        save.disabled=false
+      }
+    });
+
+    row.append(nameField,balanceField,save);
+    box.appendChild(row)
+  })
+}
+
+$('#createReserveButton').addEventListener('click',async()=>{
+  const name=$('#newReserveName').value.trim();
+  const openingBalance=Math.max(0,Number($('#newReserveOpening').value)||0);
+
+  if(!name){
+    $('#reserveManagerError').textContent='Digite o nome da nova reserva.';
+    return
+  }
+
+  $('#createReserveButton').disabled=true;
+  $('#reserveManagerError').textContent='';
+
+  try{
+    await api('/api/finance/reserve-accounts',{
+      method:'POST',
+      body:JSON.stringify({name,openingBalance})
+    });
+    $('#newReserveName').value='';
+    $('#newReserveOpening').value='';
+    await loadYear(currentYear,false);
+    renderReserveManager()
+  }catch(error){
+    $('#reserveManagerError').textContent=error.message
+  }finally{
+    $('#createReserveButton').disabled=false
+  }
+});
+
+$('#reserveManagerButton').addEventListener('click',openReserveManager);
+$('#reserveDepositButton').addEventListener('click',()=>openReserveTransferModal('to_reserve'));
+$('#reserveWithdrawButton').addEventListener('click',()=>openReserveTransferModal('from_reserve'));
+$('#addReserve').addEventListener('click',()=>openReserveTransferModal('to_reserve'));
+
+$('#closeReserveTransferModal').addEventListener('click',()=>reserveTransferModal.classList.remove('open'));
+$('#cancelReserveTransfer').addEventListener('click',()=>reserveTransferModal.classList.remove('open'));
+reserveTransferModal.addEventListener('click',e=>{if(e.target===reserveTransferModal)reserveTransferModal.classList.remove('open')});
+
+$('#closeReserveManagerModal').addEventListener('click',()=>reserveManagerModal.classList.remove('open'));
+reserveManagerModal.addEventListener('click',e=>{if(e.target===reserveManagerModal)reserveManagerModal.classList.remove('open')});
+
 function openModal(mode){editingTransactionId=null;savingTest=false;formMode=mode;$('#modalTitle').textContent=mode==='expense'?'Registrar gasto':'Registrar entrada';$('#modalKicker').textContent=mode==='expense'?'Novo gasto':'Nova entrada';$('#natureField').style.display=mode==='expense'?'block':'none';$('#categoryField').style.display=mode==='expense'?'block':'none';$('#fMonth').value=String(selectedMonth);$('#fDate').value='';$('#fValue').value='';$('#fDescription').value='';$('#fStatus').value='provisioned';$('#modalHelper').textContent='Provisionado afeta o saldo projetado. Realizado afeta também o saldo real.';modal.classList.add('open')}
 function openEditModal(t){editingTransactionId=t.id;savingTest=false;formMode=t.type;$('#modalTitle').textContent='Editar lançamento';$('#modalKicker').textContent=t.type==='expense'?'Gasto':'Entrada';$('#natureField').style.display=t.type==='expense'?'block':'none';$('#categoryField').style.display=t.type==='expense'?'block':'none';$('#fMonth').value=String(t.month);$('#fDate').value=String(t.day);$('#fValue').value=String(t.value);if(t.type==='expense'){$('#fNature').value=t.nature;$('#fCategory').value=t.category}$('#fStatus').value=t.status;$('#fDescription').value=t.description||'';$('#dayDrawer').classList.remove('open');modal.classList.add('open')}
 function openSaveTestModal(){
@@ -668,7 +1095,10 @@ function openSaveTestModal(){
 }
 $('#saveTest').addEventListener('click',openSaveTestModal);$('#addExpense').addEventListener('click',()=>openModal('expense'));$('#addIncome').addEventListener('click',()=>openModal('income'));$('#closeModal').addEventListener('click',()=>modal.classList.remove('open'));$('#cancelModal').addEventListener('click',()=>modal.classList.remove('open'));modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')});
 
-MONTHS.forEach((name,i)=>{const o=document.createElement('option');o.value=i;o.textContent=name;$('#fMonth').appendChild(o)});
+MONTHS.forEach((name,i)=>{
+  const o=document.createElement('option');o.value=i;o.textContent=name;$('#fMonth').appendChild(o);
+  const r=document.createElement('option');r.value=i;r.textContent=name;$('#rMonth').appendChild(r)
+});
 $('#entryForm').addEventListener('submit',async e=>{e.preventDefault();const month=Number($('#fMonth').value),day=Number($('#fDate').value),value=Number($('#fValue').value);if(!value||day<1||day>daysInMonth(month))return;const payload={year:currentYear,month,day,type:formMode,value,nature:formMode==='expense'?$('#fNature').value:null,category:formMode==='expense'?$('#fCategory').value:null,status:$('#fStatus').value,description:$('#fDescription').value.trim()||(formMode==='expense'?'Gasto':'Entrada')};try{if(editingTransactionId)await api(`/api/finance/transactions/${encodeURIComponent(editingTransactionId)}`,{method:'PUT',body:JSON.stringify(payload)});else await api('/api/finance/transactions',{method:'POST',body:JSON.stringify(payload)});selectedMonth=month;if(savingTest)testDraft=null;modal.classList.remove('open');await loadYear(currentYear,false);scrollToMonth(month,false)}catch(err){showError(err.message)}});
 
 async function saveYearSettings(){try{await api('/api/finance/year',{method:'PUT',body:JSON.stringify({year:currentYear,openingBalance:yearOpeningBalance,warningThreshold})});showError('')}catch(e){showError(e.message)}}
@@ -686,7 +1116,19 @@ function scrollToMonth(month,smooth=true){const head=$(`.month-head th[data-mont
 async function loadYear(year,scroll=true){
   showError('');
   try{
-    const state=await api(`/api/finance/state?year=${encodeURIComponent(year)}`);currentYear=year;yearOpeningBalance=Number(state.openingBalance||0);warningThreshold=Number(state.warningThreshold??1000);categories=Array.isArray(state.categories)?state.categories:[];budgets=Array.isArray(state.budgets)?state.budgets:[];transactions=Array.isArray(state.transactions)?state.transactions:[];populateCategorySelect();renderAll();if(scroll)setTimeout(()=>scrollToMonth(selectedMonth,false),40)
+    const state=await api(`/api/finance/state?year=${encodeURIComponent(year)}`);
+    currentYear=year;
+    yearOpeningBalance=Number(state.openingBalance||0);
+    warningThreshold=Number(state.warningThreshold??1000);
+    categories=Array.isArray(state.categories)?state.categories:[];
+    budgets=Array.isArray(state.budgets)?state.budgets:[];
+    transactions=Array.isArray(state.transactions)?state.transactions:[];
+    reserveAccounts=Array.isArray(state.reserveAccounts)?state.reserveAccounts:[];
+    reserveTransfers=Array.isArray(state.reserveTransfers)?state.reserveTransfers:[];
+    populateCategorySelect();
+    populateReserveSelect();
+    renderAll();
+    if(scroll)setTimeout(()=>scrollToMonth(selectedMonth,false),40)
   }catch(e){showError(e.message)}
 }
 

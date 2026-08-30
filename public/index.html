@@ -703,10 +703,219 @@
 
     .clear-day:hover { color: var(--danger); }
 
+
+    .habits-strip {
+      margin: -8px 0 30px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 13px 0 14px;
+    }
+
+    .habits-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 11px;
+    }
+
+    .habits-head-title {
+      color: #737373;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .habits-month {
+      color: #3f3f3f;
+      font-size: 9px;
+    }
+
+    .habits-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .habit {
+      min-width: 0;
+    }
+
+    .habit + .habit {
+      border-left: 1px solid #161616;
+      padding-left: 18px;
+    }
+
+    .habit-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 38px;
+    }
+
+    .habit-copy {
+      min-width: 0;
+    }
+
+    .habit-name {
+      color: #9a9a9a;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .habit-state {
+      margin-top: 2px;
+      color: #414141;
+      font-size: 8px;
+    }
+
+    .habit-toggle {
+      min-height: 28px;
+      border: 1px solid #202020;
+      border-radius: 6px;
+      background: transparent;
+      color: #545454;
+      padding: 0 9px;
+      font: inherit;
+      font-size: 9px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .habit-toggle:hover {
+      border-color: #333;
+      color: #888;
+    }
+
+    .habit-toggle.done {
+      border-color: #244d6c;
+      background: #0d1b25;
+      color: #6fa9d2;
+    }
+
+    .bottles {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-right: 3px;
+    }
+
+    .bottle {
+      position: relative;
+      width: 19px;
+      height: 31px;
+      border: 0;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .bottle::before {
+      content: "";
+      position: absolute;
+      left: 4px;
+      top: 6px;
+      width: 10px;
+      height: 22px;
+      border: 1px solid #313131;
+      border-radius: 3px 3px 5px 5px;
+      background: #0b0b0b;
+      transition: .14s ease;
+    }
+
+    .bottle::after {
+      content: "";
+      position: absolute;
+      left: 6px;
+      top: 2px;
+      width: 6px;
+      height: 5px;
+      border: 1px solid #313131;
+      border-bottom: 0;
+      border-radius: 2px 2px 0 0;
+      transition: .14s ease;
+    }
+
+    .bottle-handle {
+      position: absolute;
+      right: 0;
+      top: 10px;
+      width: 6px;
+      height: 10px;
+      border: 1px solid #313131;
+      border-left: 0;
+      border-radius: 0 5px 5px 0;
+      transition: .14s ease;
+    }
+
+    .bottle.filled::before {
+      border-color: #3f83b4;
+      background: #1d5e8e;
+      box-shadow: inset 0 0 0 1px #2d6f9f;
+    }
+
+    .bottle.filled::after,
+    .bottle.filled .bottle-handle {
+      border-color: #4d8db9;
+    }
+
+    .strike-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 9px;
+      margin-top: 8px;
+    }
+
+    .strike-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 7px);
+      gap: 3px;
+    }
+
+    .strike {
+      width: 7px;
+      height: 7px;
+      border: 0;
+      border-radius: 1px;
+      background: #171717;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .strike:hover:not(:disabled) {
+      background: #2a2a2a;
+    }
+
+    .strike.done {
+      background: #2b78ad;
+    }
+
+    .strike.today {
+      box-shadow: 0 0 0 1px #626262;
+    }
+
+    .strike.future {
+      background: #0c0c0c;
+      cursor: default;
+      opacity: .5;
+    }
+
+    .strike-count {
+      color: #454545;
+      font-size: 8px;
+      white-space: nowrap;
+    }
+
     @media (max-width: 820px) {
       .page { width: min(100% - 28px, 660px); padding-top: 30px; }
       .topbar { align-items: start; flex-direction: column; margin-bottom: 42px; }
       .layout { grid-template-columns: 1fr; gap: 52px; }
+      .habits-grid { grid-template-columns: 1fr; gap: 13px; }
+      .habit + .habit { border-left: 0; border-top: 1px solid #161616; padding-left: 0; padding-top: 12px; }
+      .strike-grid { grid-template-columns: repeat(16, 7px); }
       .timeline-panel { border-top: 1px solid var(--border); border-left: 0; padding-top: 35px; padding-left: 0; }
       .timer { font-size: clamp(58px, 16vw, 84px); }
     }
@@ -743,6 +952,61 @@
     </header>
 
     <div class="status" id="status"></div>
+
+    <section class="habits-strip" aria-label="Hábitos">
+      <div class="habits-head">
+        <div class="habits-head-title">Strikes</div>
+        <div class="habits-month" id="habitsMonth"></div>
+      </div>
+
+      <div class="habits-grid">
+        <article class="habit">
+          <div class="habit-top">
+            <div class="habit-copy">
+              <div class="habit-name">Água</div>
+              <div class="habit-state" id="waterState">0 de 3 garrafinhas</div>
+            </div>
+            <div class="bottles" aria-label="Garrafinhas de água">
+              <button class="bottle" type="button" data-water-bottle="1" aria-label="Primeira garrafinha"><span class="bottle-handle"></span></button>
+              <button class="bottle" type="button" data-water-bottle="2" aria-label="Segunda garrafinha"><span class="bottle-handle"></span></button>
+              <button class="bottle" type="button" data-water-bottle="3" aria-label="Terceira garrafinha"><span class="bottle-handle"></span></button>
+            </div>
+          </div>
+          <div class="strike-row">
+            <div class="strike-grid" id="waterStrikes"></div>
+            <div class="strike-count" id="waterStrikeCount">0 strikes</div>
+          </div>
+        </article>
+
+        <article class="habit">
+          <div class="habit-top">
+            <div class="habit-copy">
+              <div class="habit-name">Exercício físico</div>
+              <div class="habit-state" id="exerciseState">ainda não marcado</div>
+            </div>
+            <button class="habit-toggle" id="exerciseToggle" type="button">Marcar</button>
+          </div>
+          <div class="strike-row">
+            <div class="strike-grid" id="exerciseStrikes"></div>
+            <div class="strike-count" id="exerciseStrikeCount">0 strikes</div>
+          </div>
+        </article>
+
+        <article class="habit">
+          <div class="habit-top">
+            <div class="habit-copy">
+              <div class="habit-name">Dormir antes das 23:30</div>
+              <div class="habit-state" id="sleepState">ainda não marcado</div>
+            </div>
+            <button class="habit-toggle" id="sleepToggle" type="button">Marcar</button>
+          </div>
+          <div class="strike-row">
+            <div class="strike-grid" id="sleepStrikes"></div>
+            <div class="strike-count" id="sleepStrikeCount">0 strikes</div>
+          </div>
+        </article>
+      </div>
+    </section>
 
     <div class="layout">
       <section class="focus-panel" id="focusPanel">
@@ -935,6 +1199,20 @@
       const timeline = $("#timeline");
       const clearDayButton = $("#clearDayButton");
 
+      const habitsMonth = $("#habitsMonth");
+      const waterState = $("#waterState");
+      const waterStrikes = $("#waterStrikes");
+      const waterStrikeCount = $("#waterStrikeCount");
+      const exerciseToggle = $("#exerciseToggle");
+      const exerciseState = $("#exerciseState");
+      const exerciseStrikes = $("#exerciseStrikes");
+      const exerciseStrikeCount = $("#exerciseStrikeCount");
+      const sleepToggle = $("#sleepToggle");
+      const sleepState = $("#sleepState");
+      const sleepStrikes = $("#sleepStrikes");
+      const sleepStrikeCount = $("#sleepStrikeCount");
+      const waterBottles = [...document.querySelectorAll("[data-water-bottle]")];
+
       let active = null;
       let entries = [];
       let plans = [];
@@ -943,6 +1221,8 @@
       let timerInterval = null;
       let noteTimer = null;
       let lastSavedNotes = "";
+      let habitDays = [];
+      let habitBusy = false;
 
       function localDayKey(offset = 0) {
         const date = new Date();
@@ -959,6 +1239,158 @@
       function viewDayKey() {
         return localDayKey(viewOffset);
       }
+
+      function currentMonthKey() {
+        return localDayKey(0).slice(0, 7);
+      }
+
+      function habitDay(day) {
+        return habitDays.find(item => item.day === day) || {
+          day,
+          waterCount: 0,
+          exercise: false,
+          sleepBefore2330: false
+        };
+      }
+
+      function monthDays() {
+        const [year, month] = currentMonthKey().split("-").map(Number);
+        return new Date(year, month, 0).getDate();
+      }
+
+      function habitComplete(record, habit) {
+        if (habit === "water") return Number(record.waterCount || 0) >= 3;
+        if (habit === "exercise") return Boolean(record.exercise);
+        return Boolean(record.sleepBefore2330);
+      }
+
+      async function saveHabitDay(day, next) {
+        if (habitBusy) return;
+
+        habitBusy = true;
+
+        try {
+          const data = await api("/api/habits/day", {
+            method: "PUT",
+            body: JSON.stringify({
+              day,
+              waterCount: Number(next.waterCount || 0),
+              exercise: Boolean(next.exercise),
+              sleepBefore2330: Boolean(next.sleepBefore2330)
+            })
+          });
+
+          const index = habitDays.findIndex(item => item.day === day);
+
+          if (index >= 0) {
+            habitDays[index] = data.day;
+          } else {
+            habitDays.push(data.day);
+            habitDays.sort((a, b) => a.day.localeCompare(b.day));
+          }
+
+          renderHabits();
+        } catch (error) {
+          showStatus(error.message);
+        } finally {
+          habitBusy = false;
+        }
+      }
+
+      function strikeTitle(day, done, future) {
+        const [, month, date] = day.split("-");
+        if (future) return `${date}/${month} · futuro`;
+        return `${date}/${month} · ${done ? "strike" : "não concluído"}`;
+      }
+
+      function renderStrikeGrid(container, counter, habit) {
+        container.innerHTML = "";
+        const month = currentMonthKey();
+        const today = localDayKey(0);
+        let completed = 0;
+
+        for (let dayNumber = 1; dayNumber <= monthDays(); dayNumber++) {
+          const day = `${month}-${String(dayNumber).padStart(2, "0")}`;
+          const record = habitDay(day);
+          const done = habitComplete(record, habit);
+          const future = day > today;
+
+          if (done) completed += 1;
+
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = `strike${done ? " done" : ""}${day === today ? " today" : ""}${future ? " future" : ""}`;
+          button.disabled = future || habitBusy;
+          button.title = strikeTitle(day, done, future);
+          button.setAttribute("aria-label", button.title);
+
+          if (!future) {
+            button.addEventListener("click", () => {
+              const current = habitDay(day);
+              const next = { ...current };
+
+              if (habit === "water") {
+                next.waterCount = habitComplete(current, habit) ? 0 : 3;
+              } else if (habit === "exercise") {
+                next.exercise = !current.exercise;
+              } else {
+                next.sleepBefore2330 = !current.sleepBefore2330;
+              }
+
+              saveHabitDay(day, next);
+            });
+          }
+
+          container.appendChild(button);
+        }
+
+        counter.textContent = `${completed} strike${completed === 1 ? "" : "s"}`;
+      }
+
+      function renderHabits() {
+        const today = habitDay(localDayKey(0));
+        const waterCount = Number(today.waterCount || 0);
+
+        habitsMonth.textContent = new Intl.DateTimeFormat("pt-BR", {
+          month: "long",
+          year: "numeric"
+        }).format(new Date()).replace(/^./, char => char.toUpperCase());
+
+        waterState.textContent = waterCount === 3
+          ? "strike do dia"
+          : `${waterCount} de 3 garrafinhas`;
+
+        waterBottles.forEach(button => {
+          const number = Number(button.dataset.waterBottle);
+          button.classList.toggle("filled", number <= waterCount);
+          button.disabled = habitBusy;
+        });
+
+        exerciseToggle.classList.toggle("done", Boolean(today.exercise));
+        exerciseToggle.textContent = today.exercise ? "Feito" : "Marcar";
+        exerciseState.textContent = today.exercise ? "strike do dia" : "ainda não marcado";
+        exerciseToggle.disabled = habitBusy;
+
+        sleepToggle.classList.toggle("done", Boolean(today.sleepBefore2330));
+        sleepToggle.textContent = today.sleepBefore2330 ? "Feito" : "Marcar";
+        sleepState.textContent = today.sleepBefore2330 ? "strike do dia" : "ainda não marcado";
+        sleepToggle.disabled = habitBusy;
+
+        renderStrikeGrid(waterStrikes, waterStrikeCount, "water");
+        renderStrikeGrid(exerciseStrikes, exerciseStrikeCount, "exercise");
+        renderStrikeGrid(sleepStrikes, sleepStrikeCount, "sleep");
+      }
+
+      async function loadHabits() {
+        try {
+          const data = await api(`/api/habits?month=${encodeURIComponent(currentMonthKey())}`);
+          habitDays = Array.isArray(data.days) ? data.days : [];
+          renderHabits();
+        } catch (error) {
+          showStatus(error.message);
+        }
+      }
+
 
       function makeLocalIso(day, time) {
         const [year, month, date] = day.split("-").map(Number);
@@ -1915,6 +2347,40 @@
         }
       });
 
+      waterBottles.forEach(button => {
+        button.addEventListener("click", () => {
+          const todayKey = localDayKey(0);
+          const current = habitDay(todayKey);
+          const bottle = Number(button.dataset.waterBottle);
+          const nextCount = Number(current.waterCount || 0) >= bottle ? bottle - 1 : bottle;
+
+          saveHabitDay(todayKey, {
+            ...current,
+            waterCount: nextCount
+          });
+        });
+      });
+
+      exerciseToggle.addEventListener("click", () => {
+        const todayKey = localDayKey(0);
+        const current = habitDay(todayKey);
+
+        saveHabitDay(todayKey, {
+          ...current,
+          exercise: !current.exercise
+        });
+      });
+
+      sleepToggle.addEventListener("click", () => {
+        const todayKey = localDayKey(0);
+        const current = habitDay(todayKey);
+
+        saveHabitDay(todayKey, {
+          ...current,
+          sleepBefore2330: !current.sleepBefore2330
+        });
+      });
+
       dateLabel.textContent = new Intl.DateTimeFormat("pt-BR", {
         weekday: "long",
         day: "2-digit",
@@ -1922,6 +2388,7 @@
       }).format(new Date()).replace(/^./, char => char.toUpperCase());
 
       load();
+      loadHabits();
     })();
   </script>
 </body>

@@ -1030,6 +1030,102 @@ async function handleApi(req, res, url) {
     return true;
   }
 
+
+  if (req.method === "GET" && url.pathname === "/api/habits") {
+    const month = String(url.searchParams.get("month") || "");
+    const match = month.match(/^(\d{4})-(\d{2})$/);
+
+    if (!match) {
+      sendJson(res, 400, { error: "Mês inválido." });
+      return true;
+    }
+
+    const year = Number(match[1]);
+    const monthNumber = Number(match[2]);
+
+    if (!validFinanceYear(year) || !validFinanceMonth(monthNumber)) {
+      sendJson(res, 400, { error: "Mês inválido." });
+      return true;
+    }
+
+    const start = `${year}-${String(monthNumber).padStart(2, "0")}-01`;
+    const nextYear = monthNumber === 12 ? year + 1 : year;
+    const nextMonth = monthNumber === 12 ? 1 : monthNumber + 1;
+    const end = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
+
+    const result = await pool.query(
+      `SELECT
+         TO_CHAR(habit_day, 'YYYY-MM-DD') AS habit_day,
+         water_count,
+         exercise,
+         sleep_before_2330
+       FROM ld4_habit_days
+       WHERE habit_day >= $1::date
+         AND habit_day < $2::date
+       ORDER BY habit_day ASC`,
+      [start, end]
+    );
+
+    sendJson(res, 200, {
+      month,
+      days: result.rows.map(row => ({
+        day: row.habit_day,
+        waterCount: Number(row.water_count || 0),
+        exercise: Boolean(row.exercise),
+        sleepBefore2330: Boolean(row.sleep_before_2330)
+      }))
+    });
+    return true;
+  }
+
+  if (req.method === "PUT" && url.pathname === "/api/habits/day") {
+    const body = await readJson(req);
+    const day = String(body.day || "");
+    const waterCount = Number(body.waterCount);
+    const exercise = Boolean(body.exercise);
+    const sleepBefore2330 = Boolean(body.sleepBefore2330);
+
+    if (
+      !validDay(day) ||
+      !Number.isInteger(waterCount) ||
+      waterCount < 0 ||
+      waterCount > 3
+    ) {
+      sendJson(res, 400, { error: "Registro de hábito inválido." });
+      return true;
+    }
+
+    const result = await pool.query(
+      `INSERT INTO ld4_habit_days
+        (habit_day, water_count, exercise, sleep_before_2330, updated_at)
+       VALUES ($1::date, $2, $3, $4, NOW())
+       ON CONFLICT (habit_day)
+       DO UPDATE SET
+         water_count = EXCLUDED.water_count,
+         exercise = EXCLUDED.exercise,
+         sleep_before_2330 = EXCLUDED.sleep_before_2330,
+         updated_at = NOW()
+       RETURNING
+         TO_CHAR(habit_day, 'YYYY-MM-DD') AS habit_day,
+         water_count,
+         exercise,
+         sleep_before_2330`,
+      [day, waterCount, exercise, sleepBefore2330]
+    );
+
+    const row = result.rows[0];
+
+    sendJson(res, 200, {
+      day: {
+        day: row.habit_day,
+        waterCount: Number(row.water_count || 0),
+        exercise: Boolean(row.exercise),
+        sleepBefore2330: Boolean(row.sleep_before_2330)
+      }
+    });
+    return true;
+  }
+
   if (req.method === "GET" && url.pathname === "/api/health") {
     await pool.query("SELECT 1");
     sendJson(res, 200, { ok: true });

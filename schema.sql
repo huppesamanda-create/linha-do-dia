@@ -130,3 +130,14 @@ CREATE INDEX IF NOT EXISTS ld4_finance_reserve_transfers_account_idx
 INSERT INTO ld4_finance_reserve_accounts (id, name, opening_balance, sort_order)
 VALUES ('investimentos', 'Investimentos', 0, 10)
 ON CONFLICT (id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS ld4_habit_days (
+  habit_day DATE PRIMARY KEY,
+  water_count SMALLINT NOT NULL DEFAULT 0 CHECK (water_count BETWEEN 0 AND 3),
+  exercise BOOLEAN NOT NULL DEFAULT FALSE,
+  sleep_before_2330 BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS ld4_habit_days_day_idx
+  ON ld4_habit_days(habit_day);

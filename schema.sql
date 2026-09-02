@@ -141,3 +141,36 @@ CREATE TABLE IF NOT EXISTS ld4_habit_days (
 
 CREATE INDEX IF NOT EXISTS ld4_habit_days_day_idx
   ON ld4_habit_days(habit_day);
+
+CREATE TABLE IF NOT EXISTS ld4_finance_recurring_rules (
+  id TEXT PRIMARY KEY,
+  category_id TEXT NOT NULL REFERENCES ld4_finance_categories(id),
+  name TEXT NOT NULL,
+  amount NUMERIC(14,2) NOT NULL CHECK (amount > 0),
+  day_of_month SMALLINT NOT NULL CHECK (day_of_month BETWEEN 1 AND 31),
+  frequency TEXT NOT NULL DEFAULT 'monthly' CHECK (frequency = 'monthly'),
+  start_month DATE NOT NULL,
+  end_month DATE,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CHECK (end_month IS NULL OR end_month >= start_month)
+);
+
+ALTER TABLE ld4_finance_transactions
+  ADD COLUMN IF NOT EXISTS recurring_rule_id TEXT
+  REFERENCES ld4_finance_recurring_rules(id) ON DELETE SET NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ld4_finance_transactions_recurring_unique_idx
+  ON ld4_finance_transactions(recurring_rule_id, transaction_date)
+  WHERE recurring_rule_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS ld4_finance_recurring_rules_category_idx
+  ON ld4_finance_recurring_rules(category_id, active);
+
+CREATE TABLE IF NOT EXISTS ld4_finance_recurring_skips (
+  recurring_rule_id TEXT NOT NULL REFERENCES ld4_finance_recurring_rules(id) ON DELETE CASCADE,
+  skipped_date DATE NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (recurring_rule_id, skipped_date)
+);

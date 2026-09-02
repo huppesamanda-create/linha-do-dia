@@ -109,6 +109,92 @@ function cleanFinanceDescription(value) {
   return String(value || "").trim().slice(0, 500);
 }
 
+function validMonthKey(value) {
+  const match = String(value || "").match(/^(\d{4})-(\d{2})$/);
+
+  if (!match) return false;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+
+  return validFinanceYear(year) && validFinanceMonth(month);
+}
+
+function daysInFinanceMonth(year, month) {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+async function syncRecurringTransactions(year) {
+  if (!validFinanceYear(year)) return;
+
+  const yearStart = `${year}-01-01`;
+  const yearEnd = `${year}-12-01`;
+
+  const result = await pool.query(
+    `SELECT
+       id,
+       category_id,
+       name,
+       amount,
+       day_of_month,
+       TO_CHAR(start_month, 'YYYY-MM') AS start_month,
+       CASE WHEN end_month IS NULL THEN NULL ELSE TO_CHAR(end_month, 'YYYY-MM') END AS end_month
+     FROM ld4_finance_recurring_rules
+     WHERE active = TRUE
+       AND start_month <= $2::date
+       AND (end_month IS NULL OR end_month >= $1::date)
+     ORDER BY created_at ASC`,
+    [yearStart, yearEnd]
+  );
+
+  for (const rule of result.rows) {
+    for (let month = 1; month <= 12; month++) {
+      const monthKey = `${year}-${String(month).padStart(2, "0")}`;
+
+      if (monthKey < rule.start_month) continue;
+      if (rule.end_month && monthKey > rule.end_month) continue;
+
+      const day = Math.min(Number(rule.day_of_month), daysInFinanceMonth(year, month));
+      const dateKey = financeDateKey(year, month, day);
+
+      await pool.query(
+        `INSERT INTO ld4_finance_transactions
+          (
+            id,
+            transaction_date,
+            type,
+            nature,
+            amount,
+            category_id,
+            status,
+            description,
+            recurring_rule_id
+          )
+         SELECT
+           $1,
+           $2::date,
+           'expense',
+           'fixed',
+           $3,
+           $4,
+           'provisioned',
+           $5,
+           $6
+         WHERE NOT EXISTS (
+           SELECT 1
+           FROM ld4_finance_recurring_skips
+           WHERE recurring_rule_id = $6
+             AND skipped_date = $2::date
+         )
+         ON CONFLICT (recurring_rule_id, transaction_date)
+         WHERE recurring_rule_id IS NOT NULL
+         DO NOTHING`,
+        [randomUUID(), dateKey, Number(rule.amount), rule.category_id, rule.name, rule.id]
+      );
+    }
+  }
+}
+
 function cleanSubtasks(value) {
   if (!Array.isArray(value)) {
     throw new Error("Checklist inválido.");
@@ -402,16 +488,19 @@ async function handleApi(req, res, url) {
     const start = `${year}-01-01`;
     const end = `${year + 1}-01-01`;
 
+    await syncRecurringTransactions(year);
+
     const [
       transactionsResult,
       categoriesResult,
       budgetsResult,
       yearResult,
       reserveAccountsResult,
-      reserveTransfersResult
+      reserveTransfersResult,
+      recurringRulesResult
     ] = await Promise.all([
       pool.query(
-        `SELECT id, TO_CHAR(transaction_date, 'YYYY-MM-DD') AS transaction_date, type, nature, amount, category_id, status, description
+        `SELECT id, TO_CHAR(transaction_date, 'YYYY-MM-DD') AS transaction_date, type, nature, amount, category_id, status, description, recurring_rule_id
            FROM ld4_finance_transactions
           WHERE transaction_date >= $1::date
             AND transaction_date < $2::date
@@ -483,6 +572,21 @@ async function handleApi(req, res, url) {
           AND t.transfer_date < $2::date
         ORDER BY t.transfer_date ASC, t.created_at ASC`,
         [start, end]
+      ),
+      pool.query(
+        `SELECT
+           id,
+           category_id,
+           name,
+           amount,
+           day_of_month,
+           frequency,
+           TO_CHAR(start_month, 'YYYY-MM') AS start_month,
+           CASE WHEN end_month IS NULL THEN NULL ELSE TO_CHAR(end_month, 'YYYY-MM') END AS end_month,
+           active
+         FROM ld4_finance_recurring_rules
+        WHERE active = TRUE
+        ORDER BY category_id ASC, day_of_month ASC, name ASC`
       )
     ]);
 
@@ -500,7 +604,8 @@ async function handleApi(req, res, url) {
         value: Number(row.amount),
         category: row.category_id,
         status: row.status,
-        description: row.description || ""
+        description: row.description || "",
+        recurringRuleId: row.recurring_rule_id || null
       };
     });
 
@@ -543,7 +648,18 @@ async function handleApi(req, res, url) {
           status: row.status,
           description: row.description || ""
         };
-      })
+      }),
+      recurringRules: recurringRulesResult.rows.map(row => ({
+        id: row.id,
+        category: row.category_id,
+        name: row.name,
+        value: Number(row.amount || 0),
+        day: Number(row.day_of_month),
+        frequency: row.frequency,
+        startMonth: row.start_month,
+        endMonth: row.end_month,
+        active: Boolean(row.active)
+      }))
     });
     return true;
   }
@@ -901,6 +1017,186 @@ async function handleApi(req, res, url) {
     return true;
   }
 
+
+  if (req.method === "POST" && url.pathname === "/api/finance/recurring-rules") {
+    const body = await readJson(req);
+    const category = String(body.category || "");
+    const name = cleanFinanceDescription(body.name);
+    const amount = Number(body.value);
+    const day = Number(body.day);
+    const startMonth = String(body.startMonth || "");
+    const endMonth = body.endMonth ? String(body.endMonth) : null;
+    const syncYear = Number(body.year);
+
+    if (
+      !category ||
+      !name ||
+      !Number.isFinite(amount) ||
+      amount <= 0 ||
+      !Number.isInteger(day) ||
+      day < 1 ||
+      day > 31 ||
+      !validMonthKey(startMonth) ||
+      (endMonth && !validMonthKey(endMonth)) ||
+      (endMonth && endMonth < startMonth)
+    ) {
+      sendJson(res, 400, { error: "Recorrência inválida." });
+      return true;
+    }
+
+    const categoryExists = await pool.query(
+      `SELECT id FROM ld4_finance_categories
+        WHERE id = $1 AND active = TRUE LIMIT 1`,
+      [category]
+    );
+
+    if (!categoryExists.rows.length) {
+      sendJson(res, 404, { error: "Categoria não encontrada." });
+      return true;
+    }
+
+    const id = randomUUID();
+
+    await pool.query(
+      `INSERT INTO ld4_finance_recurring_rules
+        (id, category_id, name, amount, day_of_month, frequency, start_month, end_month, active, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, 'monthly', $6::date, $7::date, TRUE, NOW(), NOW())`,
+      [id, category, name, amount, day, `${startMonth}-01`, endMonth ? `${endMonth}-01` : null]
+    );
+
+    if (validFinanceYear(syncYear)) await syncRecurringTransactions(syncYear);
+
+    sendJson(res, 201, { id });
+    return true;
+  }
+
+  const recurringRuleMatch = url.pathname.match(/^\/api\/finance\/recurring-rules\/([^/]+)$/);
+
+  if (req.method === "PUT" && recurringRuleMatch) {
+    const id = decodeURIComponent(recurringRuleMatch[1]);
+    const body = await readJson(req);
+    const category = String(body.category || "");
+    const name = cleanFinanceDescription(body.name);
+    const amount = Number(body.value);
+    const day = Number(body.day);
+    const startMonth = String(body.startMonth || "");
+    const endMonth = body.endMonth ? String(body.endMonth) : null;
+    const syncYear = Number(body.year);
+
+    if (
+      !category ||
+      !name ||
+      !Number.isFinite(amount) ||
+      amount <= 0 ||
+      !Number.isInteger(day) ||
+      day < 1 ||
+      day > 31 ||
+      !validMonthKey(startMonth) ||
+      (endMonth && !validMonthKey(endMonth)) ||
+      (endMonth && endMonth < startMonth)
+    ) {
+      sendJson(res, 400, { error: "Recorrência inválida." });
+      return true;
+    }
+
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const result = await client.query(
+        `UPDATE ld4_finance_recurring_rules
+            SET category_id = $2,
+                name = $3,
+                amount = $4,
+                day_of_month = $5,
+                start_month = $6::date,
+                end_month = $7::date,
+                updated_at = NOW()
+          WHERE id = $1 AND active = TRUE
+          RETURNING id`,
+        [id, category, name, amount, day, `${startMonth}-01`, endMonth ? `${endMonth}-01` : null]
+      );
+
+      if (!result.rows.length) {
+        await client.query("ROLLBACK");
+        sendJson(res, 404, { error: "Recorrência não encontrada." });
+        return true;
+      }
+
+      await client.query(
+        `DELETE FROM ld4_finance_transactions
+          WHERE recurring_rule_id = $1
+            AND status = 'provisioned'`,
+        [id]
+      );
+
+      await client.query(
+        `DELETE FROM ld4_finance_recurring_skips
+          WHERE recurring_rule_id = $1`,
+        [id]
+      );
+
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    if (validFinanceYear(syncYear)) await syncRecurringTransactions(syncYear);
+
+    sendJson(res, 200, { id });
+    return true;
+  }
+
+  if (req.method === "DELETE" && recurringRuleMatch) {
+    const id = decodeURIComponent(recurringRuleMatch[1]);
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const result = await client.query(
+        `UPDATE ld4_finance_recurring_rules
+            SET active = FALSE, updated_at = NOW()
+          WHERE id = $1 AND active = TRUE
+          RETURNING id`,
+        [id]
+      );
+
+      if (!result.rows.length) {
+        await client.query("ROLLBACK");
+        sendJson(res, 404, { error: "Recorrência não encontrada." });
+        return true;
+      }
+
+      await client.query(
+        `DELETE FROM ld4_finance_transactions
+          WHERE recurring_rule_id = $1
+            AND status = 'provisioned'`,
+        [id]
+      );
+
+      await client.query(
+        `DELETE FROM ld4_finance_recurring_skips
+          WHERE recurring_rule_id = $1`,
+        [id]
+      );
+
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    sendJson(res, 200, { ok: true });
+    return true;
+  }
+
   if (req.method === "PUT" && url.pathname === "/api/finance/budget") {
     const body = await readJson(req);
     const year = Number(body.year);
@@ -1016,18 +1312,51 @@ async function handleApi(req, res, url) {
 
   if (req.method === "DELETE" && financeTransactionMatch) {
     const id = decodeURIComponent(financeTransactionMatch[1]);
-    const result = await pool.query(
-      `DELETE FROM ld4_finance_transactions WHERE id = $1 RETURNING id`,
-      [id]
-    );
+    const client = await pool.connect();
 
-    if (!result.rows.length) {
-      sendJson(res, 404, { error: "Lançamento não encontrado." });
+    try {
+      await client.query("BEGIN");
+
+      const existing = await client.query(
+        `SELECT id, recurring_rule_id, TO_CHAR(transaction_date, 'YYYY-MM-DD') AS transaction_date
+           FROM ld4_finance_transactions
+          WHERE id = $1
+          LIMIT 1`,
+        [id]
+      );
+
+      if (!existing.rows.length) {
+        await client.query("ROLLBACK");
+        sendJson(res, 404, { error: "Lançamento não encontrado." });
+        return true;
+      }
+
+      const row = existing.rows[0];
+
+      if (row.recurring_rule_id) {
+        await client.query(
+          `INSERT INTO ld4_finance_recurring_skips
+            (recurring_rule_id, skipped_date, created_at)
+           VALUES ($1, $2::date, NOW())
+           ON CONFLICT (recurring_rule_id, skipped_date) DO NOTHING`,
+          [row.recurring_rule_id, row.transaction_date]
+        );
+      }
+
+      await client.query(`DELETE FROM ld4_finance_transactions WHERE id = $1`, [id]);
+      await client.query("COMMIT");
+
+      sendJson(res, 200, {
+        ok: true,
+        skippedRecurringMonth: Boolean(row.recurring_rule_id)
+      });
       return true;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
     }
-
-    sendJson(res, 200, { ok: true });
-    return true;
   }
 
 

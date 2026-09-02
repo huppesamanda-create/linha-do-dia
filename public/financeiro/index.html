@@ -162,7 +162,30 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
 .budget-table{width:100%;border-collapse:collapse}
 .budget-table th{border-bottom:1px solid #222;padding:0 8px 9px;color:#515151;font-size:9px;text-transform:uppercase;letter-spacing:.08em;text-align:right}.budget-table th:first-child{text-align:left}
 .budget-table td{height:42px;border-bottom:1px solid #111;padding:0 8px;text-align:right;font-size:10px;color:#727272;font-variant-numeric:tabular-nums}.budget-table td:first-child{text-align:left}
-.budget-name{color:#aaa;font-size:11px;font-weight:700}.budget-bar{height:3px;background:#171717;margin-top:5px;border-radius:20px;overflow:hidden}.budget-fill{height:100%;background:#777}.budget-fill.over{background:#9d6f6f}
+.budget-name{color:#aaa;font-size:11px;font-weight:700}
+.budget-open{display:block;width:100%;border:0;background:transparent;color:inherit;text-align:left;padding:0;cursor:pointer;font:inherit}
+.budget-open:hover .budget-name{color:#d0d0d0}
+.budget-recurring-note{margin-top:3px;color:#53646f;font-size:8px;font-weight:600}
+.budget-detail-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:#191919;border:1px solid #191919;border-radius:7px;overflow:hidden;margin:16px 0}
+.budget-detail-stat{background:#070707;padding:11px 12px}
+.budget-detail-stat span{display:block;color:#4e4e4e;font-size:8px;text-transform:uppercase;letter-spacing:.08em}
+.budget-detail-stat strong{display:block;margin-top:4px;color:#aaa;font-size:13px;font-variant-numeric:tabular-nums}
+.detail-section{margin-top:19px}
+.detail-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.detail-section-head h4{margin:0;color:#8e8e8e;font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+.detail-list{border-top:1px solid #181818}
+.detail-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid #111}
+.detail-row-title{color:#9a9a9a;font-size:10px;font-weight:700}
+.detail-row-meta{margin-top:2px;color:#4c4c4c;font-size:8px}
+.detail-row-value{text-align:right;color:#858585;font-size:10px;font-variant-numeric:tabular-nums}
+.detail-row-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:4px}
+.detail-row-actions button{border:0;background:transparent;color:#4f4f4f;padding:0;font:inherit;font-size:8px;cursor:pointer}
+.detail-row-actions button:hover{color:#aaa}
+.recurring-badge{display:inline-flex;align-items:center;margin-left:5px;padding:1px 4px;border:1px solid #253642;border-radius:999px;color:#647c8b;font-size:7px;vertical-align:1px}
+.empty-detail{padding:12px 0;color:#444;font-size:9px}
+.recurring-modal .helper{margin-top:11px}
+@media(max-width:700px){.budget-detail-summary{grid-template-columns:1fr}}
+.budget-bar{height:3px;background:#171717;margin-top:5px;border-radius:20px;overflow:hidden}.budget-fill{height:100%;background:#777}.budget-fill.over{background:#9d6f6f}
 .budget-edit{width:94px;text-align:right;background:transparent;border:1px solid transparent;border-radius:5px;color:#8a8a8a;padding:5px}.budget-edit:hover,.budget-edit:focus{border-color:#2b2b2b;outline:0;background:#090909}
 .summary-box{border-top:1px solid #222;padding-top:14px}.summary-line{display:flex;justify-content:space-between;gap:20px;padding:7px 0;color:#616161;font-size:10px}.summary-line strong{color:#aaa;font-weight:700;font-variant-numeric:tabular-nums}
 .summary-line.main{border-top:1px solid #171717;margin-top:7px;padding-top:13px;font-size:11px}.summary-line.main strong{color:#c3c3c3}
@@ -386,6 +409,62 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
   </section>
 </div>
 
+
+<div class="modal-backdrop" id="budgetDetailBackdrop">
+  <section class="modal" aria-labelledby="budgetDetailTitle">
+    <div class="modal-head">
+      <div>
+        <div class="kicker">Orçamento · <span id="budgetDetailMonth"></span></div>
+        <h3 id="budgetDetailTitle">Categoria</h3>
+      </div>
+      <button class="close" type="button" id="closeBudgetDetail">×</button>
+    </div>
+
+    <div class="budget-detail-summary">
+      <div class="budget-detail-stat"><span>Orçamento</span><strong id="detailBudget"></strong></div>
+      <div class="budget-detail-stat"><span>Recorrências</span><strong id="detailRecurring"></strong></div>
+      <div class="budget-detail-stat"><span>Livre após recorrências</span><strong id="detailFree"></strong></div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-head"><h4>Composição deste mês</h4></div>
+      <div class="detail-list" id="budgetMonthItems"></div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-head">
+        <h4>Recorrências programadas</h4>
+        <button class="btn tiny" type="button" id="addRecurringRule">+ recorrência</button>
+      </div>
+      <div class="detail-list" id="recurringRulesList"></div>
+    </div>
+  </section>
+</div>
+
+<div class="modal-backdrop" id="recurringRuleBackdrop">
+  <form class="modal recurring-modal" id="recurringRuleForm">
+    <div class="modal-head">
+      <div>
+        <div class="kicker" id="recurringRuleKicker">Nova recorrência</div>
+        <h3 id="recurringRuleTitle">Programar pagamento</h3>
+      </div>
+      <button class="close" type="button" id="closeRecurringRule">×</button>
+    </div>
+
+    <div class="form-grid">
+      <div class="field full"><label>Descrição</label><input id="rrName" type="text" maxlength="500" required placeholder="Ex.: Spotify"></div>
+      <div class="field"><label>Valor mensal</label><input id="rrValue" type="number" min="0.01" step="0.01" required></div>
+      <div class="field"><label>Todo dia</label><input id="rrDay" type="number" min="1" max="31" required></div>
+      <div class="field"><label>A partir de</label><input id="rrStartMonth" type="month" required></div>
+      <div class="field"><label>Até</label><input id="rrEndMonth" type="month"></div>
+    </div>
+
+    <div class="helper">Será criado automaticamente um lançamento provisionado em cada mês. Se o dia escolhido não existir naquele mês, será usado o último dia do mês.</div>
+    <div class="modal-actions"><button class="btn" type="button" id="cancelRecurringRule">Cancelar</button><button class="btn primary" type="submit">Salvar recorrência</button></div>
+    <div class="inline-error" id="recurringRuleError"></div>
+  </form>
+</div>
+
 <div class="modal-backdrop" id="categoryModalBackdrop">
   <section class="modal" aria-labelledby="categoryModalTitle">
     <div class="modal-head">
@@ -433,6 +512,9 @@ let categories=[];
 let budgets=[];
 let reserveAccounts=[];
 let reserveTransfers=[];
+let recurringRules=[];
+let selectedBudgetCategory=null;
+let editingRecurringRuleId=null;
 let editingTransactionId=null;
 let editingReserveTransferId=null;
 let savingTest=false;
@@ -457,6 +539,16 @@ function txDay(m,d){return txMonth(m).filter(t=>t.day===d)}
 function sum(v){return v.reduce((a,b)=>a+Number(b||0),0)}
 function categoryName(id){return categories.find(c=>c.id===id)?.name||'—'}
 function budgetAmount(month,category){return Number(budgets.find(b=>b.month===month&&b.category===category)?.amount||0)}
+function monthKey(year,month){return `${year}-${String(month+1).padStart(2,'0')}`}
+function recurringRulesForCategory(category){return recurringRules.filter(r=>r.category===category&&r.active!==false)}
+function ruleAppliesToMonth(rule,year,month){
+  const key=monthKey(year,month);
+  return key>=rule.startMonth&&(!rule.endMonth||key<=rule.endMonth)
+}
+function recurringCommitment(category,year=currentYear,month=selectedMonth){
+  return sum(recurringRulesForCategory(category).filter(r=>ruleAppliesToMonth(r,year,month)).map(r=>r.value))
+}
+
 function reserveName(id){return reserveAccounts.find(a=>a.id===id)?.name||'Reserva'}
 function reserveMonth(m){return reserveTransfers.filter(t=>t.year===currentYear&&t.month===m)}
 function reserveDay(m,d){return reserveMonth(m).filter(t=>t.day===d)}
@@ -646,7 +738,36 @@ function renderSelectedMonth(){
 }
 
 function renderBudgets(){
-  const box=$('#budgetRows');box.innerHTML='';categories.forEach(cat=>{const tx=txMonth(selectedMonth).filter(t=>t.type==='expense'&&t.category===cat.id),real=sum(tx.filter(t=>t.status==='realized').map(t=>t.value)),prov=sum(tx.filter(t=>t.status==='provisioned').map(t=>t.value)),budget=budgetAmount(selectedMonth,cat.id),used=real+prov,available=budget-used,pct=budget?Math.min(100,(used/budget)*100):0;const tr=document.createElement('tr');tr.innerHTML=`<td><div class="budget-name">${escapeHtml(cat.name)}</div><div class="budget-bar"><div class="budget-fill ${available<0?'over':''}" style="width:${pct}%"></div></div></td><td>${BRL.format(budget)}</td><td>${BRL.format(real)}</td><td>${BRL.format(prov)}</td><td class="${available<0?'bad':'good'}">${BRL.format(available)}</td>`;box.appendChild(tr)})
+  const box=$('#budgetRows');
+  box.innerHTML='';
+
+  categories.forEach(cat=>{
+    const tx=txMonth(selectedMonth).filter(t=>t.type==='expense'&&t.category===cat.id);
+    const real=sum(tx.filter(t=>t.status==='realized').map(t=>t.value));
+    const prov=sum(tx.filter(t=>t.status==='provisioned').map(t=>t.value));
+    const budget=budgetAmount(selectedMonth,cat.id);
+    const recurring=recurringCommitment(cat.id);
+    const activeRules=recurringRulesForCategory(cat.id).filter(r=>ruleAppliesToMonth(r,currentYear,selectedMonth)).length;
+    const used=real+prov;
+    const available=budget-used;
+    const pct=budget?Math.min(100,(used/budget)*100):0;
+
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>
+      <button class="budget-open" type="button" data-budget-category="${cat.id}">
+        <div class="budget-name">${escapeHtml(cat.name)}</div>
+        ${activeRules?`<div class="budget-recurring-note">${activeRules} recorrência${activeRules===1?'':'s'} · ${BRL.format(recurring)}/mês</div>`:''}
+        <div class="budget-bar"><div class="budget-fill ${available<0?'over':''}" style="width:${pct}%"></div></div>
+      </button>
+    </td>
+    <td>${BRL.format(budget)}</td>
+    <td>${BRL.format(real)}</td>
+    <td>${BRL.format(prov)}</td>
+    <td class="${available<0?'bad':'good'}">${BRL.format(available)}</td>`;
+
+    tr.querySelector('[data-budget-category]').addEventListener('click',()=>openBudgetDetail(cat.id));
+    box.appendChild(tr)
+  })
 }
 
 function openDrawer(month,day){
@@ -662,7 +783,7 @@ function openDrawer(month,day){
     const div=document.createElement('div');
     div.className='mov';
     const kind=t.type==='income'?'Entrada':t.nature==='daily'?'Diário':'Saída';
-    div.innerHTML=`<div class="mov-top"><span class="mov-title">${escapeHtml(t.description||kind)}</span><span class="mov-value ${t.type==='income'?'good':'bad'}">${t.type==='income'?'+ ':'- '}${BRL.format(t.value)}</span></div><div class="mov-meta">${kind}${t.type==='expense'?' · '+escapeHtml(categoryName(t.category)):''} · ${t.status==='realized'?'realizado':'provisionado'}</div><div class="mov-actions"><button type="button" class="mov-action edit">Editar</button><button type="button" class="mov-action delete">Excluir</button></div>`;
+    div.innerHTML=`<div class="mov-top"><span class="mov-title">${escapeHtml(t.description||kind)}${t.recurringRuleId?'<span class="recurring-badge">recorrente</span>':''}</span><span class="mov-value ${t.type==='income'?'good':'bad'}">${t.type==='income'?'+ ':'- '}${BRL.format(t.value)}</span></div><div class="mov-meta">${kind}${t.type==='expense'?' · '+escapeHtml(categoryName(t.category)):''} · ${t.status==='realized'?'realizado':'provisionado'}</div><div class="mov-actions"><button type="button" class="mov-action edit">Editar</button><button type="button" class="mov-action delete">${t.recurringRuleId?'Pular este mês':'Excluir'}</button></div>`;
     div.querySelector('.edit').addEventListener('click',()=>openEditModal(t));
     div.querySelector('.delete').addEventListener('click',()=>deleteTransaction(t));
     list.appendChild(div)
@@ -683,10 +804,192 @@ function openDrawer(month,day){
 }
 $('#drawerClose').addEventListener('click',()=>$('#dayDrawer').classList.remove('open'));
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-async function deleteTransaction(t){if(!confirm('Excluir este lançamento?'))return;try{await api(`/api/finance/transactions/${encodeURIComponent(t.id)}`,{method:'DELETE'});$('#dayDrawer').classList.remove('open');await loadYear(currentYear,false)}catch(e){showError(e.message)}}
+async function deleteTransaction(t){
+  const message=t.recurringRuleId
+    ?'Pular esta cobrança apenas neste mês? A recorrência continuará nos meses seguintes.'
+    :'Excluir este lançamento?';
+  if(!confirm(message))return;
+  try{
+    await api(`/api/finance/transactions/${encodeURIComponent(t.id)}`,{method:'DELETE'});
+    $('#dayDrawer').classList.remove('open');
+    await loadYear(currentYear,false)
+  }catch(e){showError(e.message)}
+}
 
 const modal=$('#modalBackdrop');
 function populateCategorySelect(){const sel=$('#fCategory');sel.innerHTML='';categories.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;sel.appendChild(o)})}
+
+
+const budgetDetailBackdrop=$('#budgetDetailBackdrop');
+const recurringRuleBackdrop=$('#recurringRuleBackdrop');
+
+function openBudgetDetail(categoryId){
+  selectedBudgetCategory=categoryId;
+  const cat=categories.find(c=>c.id===categoryId);
+  if(!cat)return;
+
+  $('#budgetDetailMonth').textContent=MONTHS[selectedMonth];
+  $('#budgetDetailTitle').textContent=cat.name;
+  renderBudgetDetail();
+  budgetDetailBackdrop.classList.add('open')
+}
+
+function renderBudgetDetail(){
+  if(!selectedBudgetCategory)return;
+
+  const budget=budgetAmount(selectedMonth,selectedBudgetCategory);
+  const recurring=recurringCommitment(selectedBudgetCategory);
+  const free=budget-recurring;
+
+  $('#detailBudget').textContent=BRL.format(budget);
+  $('#detailRecurring').textContent=BRL.format(recurring);
+  $('#detailFree').textContent=BRL.format(free);
+  $('#detailFree').className=free<0?'bad':'';
+
+  const monthBox=$('#budgetMonthItems');
+  monthBox.innerHTML='';
+
+  const monthItems=txMonth(selectedMonth)
+    .filter(t=>t.type==='expense'&&t.category===selectedBudgetCategory)
+    .sort((a,b)=>a.day-b.day||String(a.description).localeCompare(String(b.description),'pt-BR'));
+
+  if(!monthItems.length){
+    monthBox.innerHTML='<div class="empty-detail">Nenhum lançamento nesta categoria neste mês.</div>'
+  }else{
+    monthItems.forEach(t=>{
+      const row=document.createElement('div');
+      row.className='detail-row';
+      row.innerHTML=`<div>
+        <div class="detail-row-title">${escapeHtml(t.description||'Saída')}${t.recurringRuleId?'<span class="recurring-badge">recorrente</span>':''}</div>
+        <div class="detail-row-meta">dia ${t.day} · ${t.status==='realized'?'realizado':'provisionado'}</div>
+      </div>
+      <div class="detail-row-value">${BRL.format(t.value)}</div>`;
+      monthBox.appendChild(row)
+    })
+  }
+
+  const rulesBox=$('#recurringRulesList');
+  rulesBox.innerHTML='';
+  const rules=recurringRulesForCategory(selectedBudgetCategory);
+
+  if(!rules.length){
+    rulesBox.innerHTML='<div class="empty-detail">Nenhuma recorrência programada.</div>'
+  }else{
+    rules.forEach(rule=>{
+      const row=document.createElement('div');
+      row.className='detail-row';
+      const start=rule.startMonth.split('-').reverse().join('/');
+      const end=rule.endMonth?` até ${rule.endMonth.split('-').reverse().join('/')}`:' · sem data final';
+      row.innerHTML=`<div>
+        <div class="detail-row-title">${escapeHtml(rule.name)}</div>
+        <div class="detail-row-meta">todo dia ${rule.day} · mensal · desde ${start}${end}</div>
+      </div>
+      <div>
+        <div class="detail-row-value">${BRL.format(rule.value)}</div>
+        <div class="detail-row-actions">
+          <button type="button" data-edit-rule>Editar</button>
+          <button type="button" data-delete-rule>Cancelar</button>
+        </div>
+      </div>`;
+      row.querySelector('[data-edit-rule]').addEventListener('click',()=>openRecurringRuleModal(rule));
+      row.querySelector('[data-delete-rule]').addEventListener('click',()=>deleteRecurringRule(rule));
+      rulesBox.appendChild(row)
+    })
+  }
+}
+
+function openRecurringRuleModal(rule=null){
+  if(!selectedBudgetCategory)return;
+
+  editingRecurringRuleId=rule?.id||null;
+  $('#recurringRuleError').textContent='';
+  $('#recurringRuleKicker').textContent=rule?'Editar recorrência':'Nova recorrência';
+  $('#recurringRuleTitle').textContent=rule?rule.name:'Programar pagamento';
+  $('#rrName').value=rule?.name||'';
+  $('#rrValue').value=rule?String(rule.value):'';
+  $('#rrDay').value=rule?String(rule.day):'';
+  $('#rrStartMonth').value=rule?.startMonth||monthKey(currentYear,selectedMonth);
+  $('#rrEndMonth').value=rule?.endMonth||'';
+
+  recurringRuleBackdrop.classList.add('open');
+  setTimeout(()=>$('#rrName').focus(),50)
+}
+
+async function deleteRecurringRule(rule){
+  if(!confirm(`Cancelar a recorrência “${rule.name}”? Os lançamentos provisionados vinculados a ela serão removidos. Os já realizados permanecem no histórico.`))return;
+
+  try{
+    await api(`/api/finance/recurring-rules/${encodeURIComponent(rule.id)}`,{method:'DELETE'});
+    await loadYear(currentYear,false);
+    if(selectedBudgetCategory)renderBudgetDetail()
+  }catch(error){
+    showError(error.message)
+  }
+}
+
+$('#recurringRuleForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+
+  const name=$('#rrName').value.trim();
+  const value=Number($('#rrValue').value);
+  const day=Number($('#rrDay').value);
+  const startMonth=$('#rrStartMonth').value;
+  const endMonth=$('#rrEndMonth').value||null;
+
+  if(!name||!value||day<1||day>31||!startMonth){
+    $('#recurringRuleError').textContent='Preencha descrição, valor, dia e mês inicial.';
+    return
+  }
+
+  if(endMonth&&endMonth<startMonth){
+    $('#recurringRuleError').textContent='O mês final não pode ser anterior ao mês inicial.';
+    return
+  }
+
+  const payload={
+    category:selectedBudgetCategory,
+    name,
+    value,
+    day,
+    startMonth,
+    endMonth,
+    year:currentYear
+  };
+
+  try{
+    if(editingRecurringRuleId){
+      await api(`/api/finance/recurring-rules/${encodeURIComponent(editingRecurringRuleId)}`,{
+        method:'PUT',
+        body:JSON.stringify(payload)
+      })
+    }else{
+      await api('/api/finance/recurring-rules',{
+        method:'POST',
+        body:JSON.stringify(payload)
+      })
+    }
+
+    recurringRuleBackdrop.classList.remove('open');
+    await loadYear(currentYear,false);
+
+    if(selectedBudgetCategory){
+      $('#budgetDetailMonth').textContent=MONTHS[selectedMonth];
+      const cat=categories.find(c=>c.id===selectedBudgetCategory);
+      if(cat)$('#budgetDetailTitle').textContent=cat.name;
+      renderBudgetDetail()
+    }
+  }catch(error){
+    $('#recurringRuleError').textContent=error.message
+  }
+});
+
+$('#addRecurringRule').addEventListener('click',()=>openRecurringRuleModal());
+$('#closeBudgetDetail').addEventListener('click',()=>budgetDetailBackdrop.classList.remove('open'));
+budgetDetailBackdrop.addEventListener('click',e=>{if(e.target===budgetDetailBackdrop)budgetDetailBackdrop.classList.remove('open')});
+
+$('#closeRecurringRule').addEventListener('click',()=>recurringRuleBackdrop.classList.remove('open'));
+$('#cancelRecurringRule').addEventListener('click',()=>recurringRuleBackdrop.classList.remove('open'));
+recurringRuleBackdrop.addEventListener('click',e=>{if(e.target===recurringRuleBackdrop)recurringRuleBackdrop.classList.remove('open')});
 
 const categoryModal=$('#categoryModalBackdrop');
 
@@ -1125,6 +1428,7 @@ async function loadYear(year,scroll=true){
     transactions=Array.isArray(state.transactions)?state.transactions:[];
     reserveAccounts=Array.isArray(state.reserveAccounts)?state.reserveAccounts:[];
     reserveTransfers=Array.isArray(state.reserveTransfers)?state.reserveTransfers:[];
+    recurringRules=Array.isArray(state.recurringRules)?state.recurringRules:[];
     populateCategorySelect();
     populateReserveSelect();
     renderAll();

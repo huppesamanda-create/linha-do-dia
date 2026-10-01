@@ -704,6 +704,189 @@
     .clear-day:hover { color: var(--danger); }
 
 
+
+    .google-strip {
+      margin: -14px 0 30px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0 13px;
+    }
+
+    .google-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 10px;
+    }
+
+    .google-title-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 9px;
+      min-width: 0;
+    }
+
+    .google-title {
+      color: #737373;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .google-updated {
+      color: #353535;
+      font-size: 8px;
+      white-space: nowrap;
+    }
+
+    .google-head-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .google-refresh,
+    .google-connect,
+    .google-disconnect {
+      min-height: 26px;
+      border: 1px solid #202020;
+      border-radius: 6px;
+      background: transparent;
+      color: #555;
+      padding: 0 9px;
+      text-decoration: none;
+      font: inherit;
+      font-size: 9px;
+      font-weight: 700;
+    }
+
+    .google-refresh {
+      width: 27px;
+      padding: 0;
+      font-size: 13px;
+    }
+
+    .google-refresh:hover,
+    .google-connect:hover,
+    .google-disconnect:hover {
+      border-color: #343434;
+      color: #999;
+      background: #0d0d0d;
+    }
+
+    .google-disconnect {
+      border: 0;
+      color: #333;
+      padding: 0 3px;
+      min-height: 24px;
+    }
+
+    .google-message {
+      display: none;
+      color: #565656;
+      font-size: 9px;
+      line-height: 1.55;
+      padding: 4px 0 2px;
+    }
+
+    .google-message.visible { display: block; }
+
+    .google-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+    }
+
+    .google-column + .google-column {
+      border-left: 1px solid #161616;
+      padding-left: 28px;
+    }
+
+    .google-column-title {
+      margin-bottom: 5px;
+      color: #494949;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .google-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .google-item {
+      display: grid;
+      grid-template-columns: 47px minmax(0, 1fr) 25px;
+      gap: 7px;
+      align-items: center;
+      min-height: 29px;
+      border-top: 1px solid #101010;
+    }
+
+    .google-item:first-child { border-top: 0; }
+
+    .google-time {
+      color: #555;
+      font-size: 9px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .google-time.overdue { color: #765858; }
+
+    .google-item-main {
+      min-width: 0;
+    }
+
+    .google-item-title {
+      display: block;
+      overflow: hidden;
+      color: #929292;
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1.25;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    a.google-item-title:hover { color: #c3c3c3; }
+
+    .google-item-meta {
+      overflow: hidden;
+      margin-top: 1px;
+      color: #3c3c3c;
+      font-size: 7.5px;
+      line-height: 1.2;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .google-play {
+      width: 24px;
+      height: 24px;
+      border: 0;
+      border-radius: 5px;
+      background: transparent;
+      color: #424242;
+      padding: 0;
+      font-size: 9px;
+    }
+
+    .google-play:hover:not(:disabled) {
+      background: #101010;
+      color: #a6a6a6;
+    }
+
+    .google-empty {
+      color: #353535;
+      font-size: 9px;
+      padding: 5px 0;
+    }
+
     .habits-strip {
       margin: -8px 0 30px;
       border-top: 1px solid var(--border);
@@ -914,6 +1097,8 @@
       .topbar { align-items: start; flex-direction: column; margin-bottom: 42px; }
       .layout { grid-template-columns: 1fr; gap: 52px; }
       .habits-grid { grid-template-columns: 1fr; gap: 13px; }
+      .google-columns { grid-template-columns: 1fr; gap: 12px; }
+      .google-column + .google-column { border-left: 0; border-top: 1px solid #161616; padding-left: 0; padding-top: 10px; }
       .habit + .habit { border-left: 0; border-top: 1px solid #161616; padding-left: 0; padding-top: 12px; }
       .strike-grid { grid-template-columns: repeat(16, 7px); }
       .timeline-panel { border-top: 1px solid var(--border); border-left: 0; padding-top: 35px; padding-left: 0; }
@@ -952,6 +1137,35 @@
     </header>
 
     <div class="status" id="status"></div>
+
+    <section class="google-strip" id="googleStrip" aria-label="Google Agenda e Tarefas">
+      <div class="google-head">
+        <div class="google-title-wrap">
+          <div class="google-title">Agenda e tarefas</div>
+          <div class="google-updated" id="googleUpdated"></div>
+        </div>
+
+        <div class="google-head-actions">
+          <button class="google-refresh" id="googleRefresh" type="button" title="Atualizar Google" aria-label="Atualizar Google">↻</button>
+          <a class="google-connect" id="googleConnect" href="/auth/google/start">Conectar Google</a>
+          <button class="google-disconnect" id="googleDisconnect" type="button">desconectar</button>
+        </div>
+      </div>
+
+      <div class="google-message" id="googleMessage"></div>
+
+      <div class="google-columns" id="googleContent">
+        <div class="google-column">
+          <div class="google-column-title">Agenda de hoje</div>
+          <div class="google-list" id="googleEvents"></div>
+        </div>
+
+        <div class="google-column">
+          <div class="google-column-title">Tarefas de hoje e atrasadas</div>
+          <div class="google-list" id="googleTasks"></div>
+        </div>
+      </div>
+    </section>
 
     <section class="habits-strip" aria-label="Hábitos">
       <div class="habits-head">
@@ -1199,6 +1413,16 @@
       const timeline = $("#timeline");
       const clearDayButton = $("#clearDayButton");
 
+      const googleStrip = $("#googleStrip");
+      const googleUpdated = $("#googleUpdated");
+      const googleRefresh = $("#googleRefresh");
+      const googleConnect = $("#googleConnect");
+      const googleDisconnect = $("#googleDisconnect");
+      const googleMessage = $("#googleMessage");
+      const googleContent = $("#googleContent");
+      const googleEvents = $("#googleEvents");
+      const googleTasks = $("#googleTasks");
+
       const habitsMonth = $("#habitsMonth");
       const waterState = $("#waterState");
       const waterStrikes = $("#waterStrikes");
@@ -1223,6 +1447,9 @@
       let lastSavedNotes = "";
       let habitDays = [];
       let habitBusy = false;
+      let googleBusy = false;
+      let googleStatus = null;
+      let googleData = { events: [], tasks: [], syncedAt: null };
 
       function localDayKey(offset = 0) {
         const date = new Date();
@@ -1360,7 +1587,13 @@
           ? "strike do dia"
           : `${waterCount} de 3 garrafinhas`;
 
-        waterBottles.forEach(button => {
+        googleRefresh.addEventListener("click", () => {
+        loadGoogleIntegration(true);
+      });
+
+      googleDisconnect.addEventListener("click", disconnectGoogle);
+
+      waterBottles.forEach(button => {
           const number = Number(button.dataset.waterBottle);
           button.classList.toggle("filled", number <= waterCount);
           button.disabled = habitBusy;
@@ -1379,6 +1612,268 @@
         renderStrikeGrid(waterStrikes, waterStrikeCount, "water");
         renderStrikeGrid(exerciseStrikes, exerciseStrikeCount, "exercise");
         renderStrikeGrid(sleepStrikes, sleepStrikeCount, "sleep");
+      }
+
+
+      function googleClock(value, allDay = false) {
+        if (allDay) return "dia todo";
+        if (!value) return "";
+
+        const date = new Date(value);
+
+        if (!Number.isFinite(date.getTime())) return "";
+
+        return new Intl.DateTimeFormat("pt-BR", {
+          hour: "2-digit",
+          minute: "2-digit"
+        }).format(date);
+      }
+
+      function googleEventTime(event) {
+        if (event.allDay) return "dia todo";
+
+        const start = googleClock(event.start);
+        const end = googleClock(event.end);
+
+        return start && end ? `${start}–${end}` : start;
+      }
+
+      function googleDueText(task) {
+        if (task.overdue) {
+          const [, month, day] = String(task.due).split("-");
+          return `${day}/${month}`;
+        }
+
+        return "hoje";
+      }
+
+      function setGoogleMessage(message = "") {
+        googleMessage.textContent = message;
+        googleMessage.classList.toggle("visible", Boolean(message));
+      }
+
+      function renderGoogleIntegration() {
+        const configured = Boolean(googleStatus?.configured);
+        const connected = Boolean(googleStatus?.connected);
+
+        googleConnect.style.display = connected ? "none" : "inline-flex";
+        googleDisconnect.style.display = connected ? "inline-block" : "none";
+        googleRefresh.style.display = connected ? "inline-block" : "none";
+        googleContent.style.display = connected ? "grid" : "none";
+
+        if (!configured) {
+          googleConnect.style.display = "none";
+          setGoogleMessage("Integração Google ainda não configurada no Railway.");
+          googleUpdated.textContent = "";
+          return;
+        }
+
+        if (!connected) {
+          setGoogleMessage("Conecte sua conta Google para mostrar Calendar e Tasks aqui.");
+          googleUpdated.textContent = "";
+          return;
+        }
+
+        setGoogleMessage("");
+
+        if (googleData.syncedAt) {
+          const synced = new Date(googleData.syncedAt);
+          googleUpdated.textContent = `atualizado ${new Intl.DateTimeFormat("pt-BR", {
+            hour: "2-digit",
+            minute: "2-digit"
+          }).format(synced)}`;
+        } else {
+          googleUpdated.textContent = "";
+        }
+
+        googleEvents.innerHTML = "";
+        googleTasks.innerHTML = "";
+
+        if (!googleData.events.length) {
+          googleEvents.innerHTML = '<div class="google-empty">Nenhum compromisso hoje.</div>';
+        } else {
+          googleData.events.forEach(event => {
+            const row = document.createElement("div");
+            row.className = "google-item";
+
+            const time = document.createElement("div");
+            time.className = "google-time";
+            time.textContent = googleEventTime(event);
+
+            const main = document.createElement("div");
+            main.className = "google-item-main";
+
+            const title = document.createElement(event.url ? "a" : "span");
+            title.className = "google-item-title";
+            title.textContent = event.title;
+
+            if (event.url) {
+              title.href = event.url;
+              title.target = "_blank";
+              title.rel = "noopener noreferrer";
+            }
+
+            const meta = document.createElement("div");
+            meta.className = "google-item-meta";
+            meta.textContent = [event.calendarName, event.location].filter(Boolean).join(" · ");
+
+            const play = document.createElement("button");
+            play.type = "button";
+            play.className = "google-play";
+            play.textContent = "▶";
+            play.title = "Iniciar na Linha do Dia";
+            play.disabled = Boolean(active) || busy || googleBusy;
+            play.addEventListener("click", () => startGoogleItem(event.title));
+
+            main.append(title, meta);
+            row.append(time, main, play);
+            googleEvents.appendChild(row);
+          });
+        }
+
+        if (!googleData.tasks.length) {
+          googleTasks.innerHTML = '<div class="google-empty">Nenhuma tarefa vencendo hoje ou atrasada.</div>';
+        } else {
+          googleData.tasks.forEach(task => {
+            const row = document.createElement("div");
+            row.className = "google-item";
+
+            const due = document.createElement("div");
+            due.className = `google-time${task.overdue ? " overdue" : ""}`;
+            due.textContent = googleDueText(task);
+
+            const main = document.createElement("div");
+            main.className = "google-item-main";
+
+            const title = document.createElement(task.url ? "a" : "span");
+            title.className = "google-item-title";
+            title.textContent = task.title;
+
+            if (task.url) {
+              title.href = task.url;
+              title.target = "_blank";
+              title.rel = "noopener noreferrer";
+            }
+
+            const meta = document.createElement("div");
+            meta.className = "google-item-meta";
+            meta.textContent = task.overdue
+              ? `${task.listName} · atrasada`
+              : task.listName;
+
+            const play = document.createElement("button");
+            play.type = "button";
+            play.className = "google-play";
+            play.textContent = "▶";
+            play.title = "Iniciar na Linha do Dia";
+            play.disabled = Boolean(active) || busy || googleBusy;
+            play.addEventListener("click", () => startGoogleItem(task.title));
+
+            main.append(title, meta);
+            row.append(due, main, play);
+            googleTasks.appendChild(row);
+          });
+        }
+      }
+
+      function googleQueryFeedback() {
+        const params = new URLSearchParams(window.location.search);
+        const value = params.get("google");
+
+        if (!value) return;
+
+        const messages = {
+          connected: "Google conectado.",
+          denied: "A conexão com o Google foi cancelada.",
+          config: "Configure as credenciais do Google no Railway antes de conectar.",
+          state: "A autorização expirou. Tente conectar novamente.",
+          refresh: "O Google não forneceu autorização persistente. Tente conectar novamente.",
+          error: "Não foi possível concluir a conexão com o Google."
+        };
+
+        if (messages[value]) {
+          showStatus(messages[value]);
+        }
+
+        params.delete("google");
+        const query = params.toString();
+        const cleanUrl = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
+        window.history.replaceState({}, "", cleanUrl);
+      }
+
+      async function loadGoogleIntegration(sync = true) {
+        if (googleBusy) return;
+
+        googleBusy = true;
+        googleRefresh.disabled = true;
+        googleRefresh.textContent = "…";
+
+        try {
+          googleStatus = await api("/api/google/status");
+          renderGoogleIntegration();
+
+          if (!googleStatus.configured || !googleStatus.connected || !sync) {
+            return;
+          }
+
+          const offset = new Date().getTimezoneOffset();
+          googleData = await api(
+            `/api/google/today?day=${encodeURIComponent(localDayKey(0))}&offset=${encodeURIComponent(offset)}`
+          );
+
+          renderGoogleIntegration();
+        } catch (error) {
+          setGoogleMessage(error.message);
+        } finally {
+          googleBusy = false;
+          googleRefresh.disabled = false;
+          googleRefresh.textContent = "↻";
+          renderGoogleIntegration();
+        }
+      }
+
+      async function startGoogleItem(title) {
+        if (!title || active || busy || googleBusy) {
+          if (active) showStatus("Conclua a atividade em andamento antes de iniciar outra.");
+          return;
+        }
+
+        setBusy(true);
+
+        try {
+          const data = await api("/api/start", {
+            method: "POST",
+            body: JSON.stringify({
+              title,
+              notes: ""
+            })
+          });
+
+          active = data.active;
+          renderAll();
+          renderGoogleIntegration();
+        } catch (error) {
+          showStatus(error.message);
+        } finally {
+          setBusy(false);
+          renderGoogleIntegration();
+        }
+      }
+
+      async function disconnectGoogle() {
+        if (!confirm("Desconectar Google Calendar e Tasks da Linha do Dia?")) return;
+
+        googleBusy = true;
+
+        try {
+          await api("/api/google/disconnect", { method: "POST" });
+          googleData = { events: [], tasks: [], syncedAt: null };
+          await loadGoogleIntegration(false);
+        } catch (error) {
+          setGoogleMessage(error.message);
+        } finally {
+          googleBusy = false;
+        }
       }
 
       async function loadHabits() {
@@ -1528,6 +2023,10 @@
         finishButton.disabled = busy || !hasActive;
         plusButton.disabled = busy;
         exportPdfButton.disabled = busy || viewOffset !== 0 || entries.length === 0;
+
+        document.querySelectorAll(".google-play").forEach(button => {
+          button.disabled = busy || hasActive || googleBusy;
+        });
       }
 
       function renderActive() {
@@ -2387,8 +2886,10 @@
         month: "long"
       }).format(new Date()).replace(/^./, char => char.toUpperCase());
 
+      googleQueryFeedback();
       load();
       loadHabits();
+      loadGoogleIntegration(true);
     })();
   </script>
 </body>

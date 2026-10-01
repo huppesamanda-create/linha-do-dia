@@ -174,3 +174,20 @@ CREATE TABLE IF NOT EXISTS ld4_finance_recurring_skips (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (recurring_rule_id, skipped_date)
 );
+
+CREATE TABLE IF NOT EXISTS ld4_google_integration (
+  id TEXT PRIMARY KEY,
+  refresh_token_encrypted TEXT NOT NULL,
+  scopes TEXT NOT NULL DEFAULT '',
+  connected_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS ld4_google_oauth_states (
+  state TEXT PRIMARY KEY,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS ld4_google_oauth_states_expiry_idx
+  ON ld4_google_oauth_states(expires_at);

@@ -1,12 +1,327 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
-const { randomUUID } = require("crypto");
+const crypto = require("crypto");
+const { randomUUID } = crypto;
+const { google } = require("googleapis");
 const { pool, initDatabase } = require("./db");
 
 const PORT = Number(process.env.PORT || 3000);
 const PUBLIC_DIR = path.join(__dirname, "public");
 const TIME_ZONE = "America/Sao_Paulo";
+
+const GOOGLE_SCOPES = [
+  "https://www.googleapis.com/auth/calendar.readonly",
+  "https://www.googleapis.com/auth/tasks.readonly"
+];
+
+function googleEnvironment() {
+  const values = {
+    clientId: String(process.env.GOOGLE_CLIENT_ID || "").trim(),
+    clientSecret: String(process.env.GOOGLE_CLIENT_SECRET || "").trim(),
+    redirectUri: String(process.env.GOOGLE_REDIRECT_URI || "").trim(),
+    tokenSecret: String(process.env.GOOGLE_TOKEN_ENCRYPTION_KEY || "").trim()
+  };
+
+  const missing = [];
+
+  if (!values.clientId) missing.push("GOOGLE_CLIENT_ID");
+  if (!values.clientSecret) missing.push("GOOGLE_CLIENT_SECRET");
+  if (!values.redirectUri) missing.push("GOOGLE_REDIRECT_URI");
+  if (!values.tokenSecret) missing.push("GOOGLE_TOKEN_ENCRYPTION_KEY");
+
+  return {
+    ...values,
+    missing,
+    configured: missing.length === 0
+  };
+}
+
+function googleOAuthClient() {
+  const env = googleEnvironment();
+
+  if (!env.configured) {
+    throw new Error(`Integração Google não configurada: ${env.missing.join(", ")}.`);
+  }
+
+  return new google.auth.OAuth2(
+    env.clientId,
+    env.clientSecret,
+    env.redirectUri
+  );
+}
+
+function googleTokenKey() {
+  const env = googleEnvironment();
+
+  if (!env.tokenSecret) {
+    throw new Error("GOOGLE_TOKEN_ENCRYPTION_KEY não configurada.");
+  }
+
+  return crypto
+    .createHash("sha256")
+    .update(env.tokenSecret, "utf8")
+    .digest();
+}
+
+function encryptGoogleToken(value) {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv("aes-256-gcm", googleTokenKey(), iv);
+  const encrypted = Buffer.concat([
+    cipher.update(String(value), "utf8"),
+    cipher.final()
+  ]);
+  const tag = cipher.getAuthTag();
+
+  return [
+    iv.toString("base64url"),
+    tag.toString("base64url"),
+    encrypted.toString("base64url")
+  ].join(".");
+}
+
+function decryptGoogleToken(value) {
+  const parts = String(value || "").split(".");
+
+  if (parts.length !== 3) {
+    throw new Error("Credencial Google armazenada em formato inválido.");
+  }
+
+  const [ivText, tagText, encryptedText] = parts;
+  const decipher = crypto.createDecipheriv(
+    "aes-256-gcm",
+    googleTokenKey(),
+    Buffer.from(ivText, "base64url")
+  );
+
+  decipher.setAuthTag(Buffer.from(tagText, "base64url"));
+
+  return Buffer.concat([
+    decipher.update(Buffer.from(encryptedText, "base64url")),
+    decipher.final()
+  ]).toString("utf8");
+}
+
+async function getStoredGoogleRefreshToken() {
+  const result = await pool.query(
+    `SELECT refresh_token_encrypted
+       FROM ld4_google_integration
+      WHERE id = 'main'
+      LIMIT 1`
+  );
+
+  if (!result.rows.length) return null;
+
+  return decryptGoogleToken(result.rows[0].refresh_token_encrypted);
+}
+
+async function authorizedGoogleClient() {
+  const refreshToken = await getStoredGoogleRefreshToken();
+
+  if (!refreshToken) {
+    const error = new Error("Google ainda não conectado.");
+    error.code = "GOOGLE_NOT_CONNECTED";
+    throw error;
+  }
+
+  const client = googleOAuthClient();
+  client.setCredentials({ refresh_token: refreshToken });
+  return client;
+}
+
+function nextDayKey(day) {
+  const date = new Date(`${day}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + 1);
+
+  return [
+    date.getUTCFullYear(),
+    String(date.getUTCMonth() + 1).padStart(2, "0"),
+    String(date.getUTCDate()).padStart(2, "0")
+  ].join("-");
+}
+
+function offsetSuffix(offsetMinutes) {
+  let value = Number(offsetMinutes);
+
+  if (!Number.isFinite(value) || value < -840 || value > 840) {
+    value = 180;
+  }
+
+  const sign = value > 0 ? "-" : "+";
+  const absolute = Math.abs(Math.trunc(value));
+  const hours = String(Math.floor(absolute / 60)).padStart(2, "0");
+  const minutes = String(absolute % 60).padStart(2, "0");
+
+  return `${sign}${hours}:${minutes}`;
+}
+
+function googleDayBounds(day, offsetMinutes) {
+  const suffix = offsetSuffix(offsetMinutes);
+
+  return {
+    timeMin: `${day}T00:00:00${suffix}`,
+    timeMax: `${nextDayKey(day)}T00:00:00${suffix}`
+  };
+}
+
+async function listVisibleGoogleCalendars(calendarApi) {
+  const calendars = [];
+  let pageToken;
+
+  do {
+    const response = await calendarApi.calendarList.list({
+      maxResults: 250,
+      showDeleted: false,
+      showHidden: false,
+      pageToken
+    });
+
+    calendars.push(...(response.data.items || []));
+    pageToken = response.data.nextPageToken || undefined;
+  } while (pageToken);
+
+  return calendars.filter(calendar => (
+    calendar.id &&
+    calendar.hidden !== true &&
+    calendar.selected !== false &&
+    calendar.accessRole !== "freeBusyReader"
+  ));
+}
+
+async function listGoogleEvents(auth, day, offsetMinutes) {
+  const calendarApi = google.calendar({ version: "v3", auth });
+  const calendars = await listVisibleGoogleCalendars(calendarApi);
+  const { timeMin, timeMax } = googleDayBounds(day, offsetMinutes);
+  const events = [];
+
+  for (const calendar of calendars) {
+    try {
+      let pageToken;
+
+      do {
+        const response = await calendarApi.events.list({
+          calendarId: calendar.id,
+          timeMin,
+          timeMax,
+          singleEvents: true,
+          orderBy: "startTime",
+          maxResults: 250,
+          showDeleted: false,
+          pageToken
+        });
+
+        for (const event of response.data.items || []) {
+          if (event.status === "cancelled") continue;
+
+          const allDay = Boolean(event.start?.date);
+          const start = event.start?.dateTime || event.start?.date || "";
+          const end = event.end?.dateTime || event.end?.date || "";
+
+          events.push({
+            id: event.id,
+            calendarId: calendar.id,
+            calendarName: calendar.summary || "Agenda",
+            title: event.summary || "Sem título",
+            start,
+            end,
+            allDay,
+            location: event.location || "",
+            description: event.description || "",
+            url: event.htmlLink || ""
+          });
+        }
+
+        pageToken = response.data.nextPageToken || undefined;
+      } while (pageToken);
+    } catch (error) {
+      console.warn(`Não foi possível ler a agenda ${calendar.summary || calendar.id}:`, error.message);
+    }
+  }
+
+  events.sort((a, b) => {
+    const aKey = a.start || "";
+    const bKey = b.start || "";
+    return aKey.localeCompare(bKey) || a.title.localeCompare(b.title, "pt-BR");
+  });
+
+  return events;
+}
+
+async function listGoogleTaskLists(tasksApi) {
+  const lists = [];
+  let pageToken;
+
+  do {
+    const response = await tasksApi.tasklists.list({
+      maxResults: 1000,
+      pageToken
+    });
+
+    lists.push(...(response.data.items || []));
+    pageToken = response.data.nextPageToken || undefined;
+  } while (pageToken);
+
+  return lists;
+}
+
+async function listGoogleTasks(auth, day) {
+  const tasksApi = google.tasks({ version: "v1", auth });
+  const lists = await listGoogleTaskLists(tasksApi);
+  const tasks = [];
+
+  for (const list of lists) {
+    if (!list.id) continue;
+
+    let pageToken;
+
+    do {
+      const response = await tasksApi.tasks.list({
+        tasklist: list.id,
+        maxResults: 100,
+        showCompleted: false,
+        showDeleted: false,
+        showHidden: false,
+        showAssigned: true,
+        dueMax: `${day}T23:59:59.999Z`,
+        pageToken
+      });
+
+      for (const task of response.data.items || []) {
+        if (
+          task.status === "completed" ||
+          task.deleted ||
+          !task.due
+        ) {
+          continue;
+        }
+
+        const due = String(task.due).slice(0, 10);
+
+        if (!due || due > day) continue;
+
+        tasks.push({
+          id: task.id,
+          listId: list.id,
+          listName: list.title || "Tarefas",
+          title: task.title || "Sem título",
+          notes: task.notes || "",
+          due,
+          overdue: due < day,
+          url: task.webViewLink || ""
+        });
+      }
+
+      pageToken = response.data.nextPageToken || undefined;
+    } while (pageToken);
+  }
+
+  tasks.sort((a, b) => {
+    if (a.overdue !== b.overdue) return a.overdue ? -1 : 1;
+    return a.due.localeCompare(b.due) || a.title.localeCompare(b.title, "pt-BR");
+  });
+
+  return tasks;
+}
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -422,7 +737,219 @@ async function generatePdf(res, day) {
   doc.end();
 }
 
+
+async function handleGoogleAuth(req, res, url) {
+  if (req.method === "GET" && url.pathname === "/auth/google/start") {
+    const env = googleEnvironment();
+
+    if (!env.configured) {
+      res.writeHead(302, {
+        "Location": "/?google=config",
+        "Cache-Control": "no-store"
+      });
+      res.end();
+      return true;
+    }
+
+    const state = crypto.randomBytes(32).toString("hex");
+
+    await pool.query(
+      `DELETE FROM ld4_google_oauth_states
+        WHERE expires_at < NOW()`
+    );
+
+    await pool.query(
+      `INSERT INTO ld4_google_oauth_states (state, expires_at, created_at)
+       VALUES ($1, NOW() + INTERVAL '10 minutes', NOW())`,
+      [state]
+    );
+
+    const client = googleOAuthClient();
+    const authorizationUrl = client.generateAuthUrl({
+      access_type: "offline",
+      scope: GOOGLE_SCOPES,
+      include_granted_scopes: true,
+      prompt: "consent",
+      state
+    });
+
+    res.writeHead(302, {
+      "Location": authorizationUrl,
+      "Cache-Control": "no-store"
+    });
+    res.end();
+    return true;
+  }
+
+  if (req.method === "GET" && url.pathname === "/auth/google/callback") {
+    const state = String(url.searchParams.get("state") || "");
+    const code = String(url.searchParams.get("code") || "");
+    const oauthError = String(url.searchParams.get("error") || "");
+
+    if (oauthError) {
+      res.writeHead(302, {
+        "Location": "/?google=denied",
+        "Cache-Control": "no-store"
+      });
+      res.end();
+      return true;
+    }
+
+    if (!state || !code) {
+      res.writeHead(302, {
+        "Location": "/?google=error",
+        "Cache-Control": "no-store"
+      });
+      res.end();
+      return true;
+    }
+
+    const stateResult = await pool.query(
+      `DELETE FROM ld4_google_oauth_states
+        WHERE state = $1
+          AND expires_at >= NOW()
+        RETURNING state`,
+      [state]
+    );
+
+    if (!stateResult.rows.length) {
+      res.writeHead(302, {
+        "Location": "/?google=state",
+        "Cache-Control": "no-store"
+      });
+      res.end();
+      return true;
+    }
+
+    const client = googleOAuthClient();
+    const tokenResponse = await client.getToken(code);
+    const tokens = tokenResponse.tokens || {};
+
+    let refreshToken = tokens.refresh_token || null;
+
+    if (!refreshToken) {
+      refreshToken = await getStoredGoogleRefreshToken();
+    }
+
+    if (!refreshToken) {
+      res.writeHead(302, {
+        "Location": "/?google=refresh",
+        "Cache-Control": "no-store"
+      });
+      res.end();
+      return true;
+    }
+
+    await pool.query(
+      `INSERT INTO ld4_google_integration
+        (id, refresh_token_encrypted, scopes, connected_at, updated_at)
+       VALUES ('main', $1, $2, NOW(), NOW())
+       ON CONFLICT (id)
+       DO UPDATE SET
+         refresh_token_encrypted = EXCLUDED.refresh_token_encrypted,
+         scopes = EXCLUDED.scopes,
+         connected_at = NOW(),
+         updated_at = NOW()`,
+      [
+        encryptGoogleToken(refreshToken),
+        String(tokens.scope || GOOGLE_SCOPES.join(" "))
+      ]
+    );
+
+    res.writeHead(302, {
+      "Location": "/?google=connected",
+      "Cache-Control": "no-store"
+    });
+    res.end();
+    return true;
+  }
+
+  return false;
+}
+
 async function handleApi(req, res, url) {
+  if (req.method === "GET" && url.pathname === "/api/google/status") {
+    const env = googleEnvironment();
+
+    let connected = false;
+
+    if (env.configured) {
+      const result = await pool.query(
+        `SELECT id
+           FROM ld4_google_integration
+          WHERE id = 'main'
+          LIMIT 1`
+      );
+
+      connected = result.rows.length > 0;
+    }
+
+    sendJson(res, 200, {
+      configured: env.configured,
+      connected,
+      missing: env.missing,
+      scopes: {
+        calendar: "readonly",
+        tasks: "readonly"
+      }
+    });
+    return true;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/google/today") {
+    const day = String(url.searchParams.get("day") || "");
+    const offset = Number(url.searchParams.get("offset"));
+
+    if (!validDay(day)) {
+      sendJson(res, 400, { error: "Data inválida." });
+      return true;
+    }
+
+    try {
+      const auth = await authorizedGoogleClient();
+
+      const [events, tasks] = await Promise.all([
+        listGoogleEvents(auth, day, offset),
+        listGoogleTasks(auth, day)
+      ]);
+
+      sendJson(res, 200, {
+        day,
+        events,
+        tasks,
+        syncedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      if (error.code === "GOOGLE_NOT_CONNECTED") {
+        sendJson(res, 401, { error: "Google ainda não conectado.", reconnect: true });
+        return true;
+      }
+
+      const status = Number(error?.response?.status || error?.code || 0);
+
+      if (status === 400 || status === 401 || status === 403) {
+        sendJson(res, 401, {
+          error: "Não consegui acessar o Google. Reconecte sua conta.",
+          reconnect: true
+        });
+        return true;
+      }
+
+      throw error;
+    }
+
+    return true;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/google/disconnect") {
+    await pool.query(
+      `DELETE FROM ld4_google_integration WHERE id = 'main'`
+    );
+
+    sendJson(res, 200, { ok: true });
+    return true;
+  }
+
   if (req.method === "GET" && url.pathname === "/api/enam/meta") {
     sendJson(res, 200, {
       authenticated: true,
@@ -1971,6 +2498,17 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
 
+    if (url.pathname.startsWith("/auth/google/")) {
+      const handled = await handleGoogleAuth(req, res, url);
+
+      if (!handled) {
+        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+        res.end("Rota não encontrada.");
+      }
+
+      return;
+    }
+
     if (url.pathname === "/enam") {
       res.writeHead(308, {
         "Location": "/enam/",
@@ -2034,14 +2572,18 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Linha do Dia ouvindo na porta ${PORT}`);
-});
+async function startServer() {
+  try {
+    console.log("Preparando banco...");
+    await initDatabase();
 
-initDatabase()
-  .then(() => {
-    console.log("Linha do Dia pronta.");
-  })
-  .catch(error => {
-    console.error("Falha ao preparar banco:", error);
-  });
+    server.listen(PORT, "0.0.0.0", () => {
+      console.log(`Linha do Dia pronta na porta ${PORT}`);
+    });
+  } catch (error) {
+    console.error("Falha ao iniciar Linha do Dia:", error);
+    process.exit(1);
+  }
+}
+
+startServer();

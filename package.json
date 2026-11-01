@@ -1,8 +1,8 @@
 {
-  "name": "linha-do-dia",
-  "version": "4.7.0",
+  "name": "financeiro-pessoal",
+  "version": "5.0.0",
   "private": true,
-  "description": "Linha do Dia com Google Calendar, Google Tasks, financeiro e hábitos.",
+  "description": "Fluxo de caixa pessoal com orçamentos, recorrências, reservas e investimentos.",
   "scripts": {
     "start": "node server.js"
   },
@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "pg": "^8.16.3",
-    "pdfkit": "^0.17.2",
-    "googleapis": "^182.0.0"
+    "pdfkit": "^0.17.2"
   }
 }

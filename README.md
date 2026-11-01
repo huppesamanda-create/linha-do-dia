@@ -1,32 +1,37 @@
-# Linha do Dia v4.2 — ENAM + Financeiro
+# Financeiro v5.0
 
-Pacote completo para substituir o conteúdo do repositório.
+A aplicação agora mantém somente o módulo financeiro.
 
-## Rotas
-
-- `/` — Linha do Dia
-- `/enam/` — Portal ENAM 2026.2
-- `/financeiro/` — Fluxo de caixa anual
-
-## Financeiro
-
-- visão anual dos 12 meses com rolagem horizontal;
-- colunas Data, Entrada, Saída, Diário e Saldo;
+## Permanece
+- fluxo de caixa anual;
 - lançamentos realizados e provisionados;
-- categoria obrigatória para gastos;
-- orçamento mensal por categoria;
-- saldo real e saldo projetado;
-- saldo inicial do ano editável;
-- limite amarelo editável;
-- simulação diretamente nas células de Saída/Diário;
-- impacto da simulação recalculado do dia até dezembro;
-- amarelo para saldo apertado e vermelho para saldo negativo;
-- simulação pode ser descartada ou transformada em provisionado;
-- edição e exclusão de lançamentos;
-- dados persistidos no PostgreSQL.
+- simulação diretamente nas células;
+- categorias e orçamentos;
+- detalhamento das categorias;
+- recorrências programadas;
+- reservas e investimentos;
+- edição e exclusão de lançamentos.
+
+## Removido da interface
+- cronômetro / Linha do Dia;
+- planejamento;
+- Strikes;
+- ENAM;
+- Google Calendar;
+- Google Tasks.
+
+## Página
+`/` abre diretamente o Financeiro.
+
+Os endereços antigos `/financeiro/` e `/enam/` redirecionam para `/`.
 
 ## Instalação
+A forma mais limpa é substituir todo o conteúdo atual do repositório pelo conteúdo deste ZIP.
 
-Substitua todo o conteúdo do GitHub pelo conteúdo deste ZIP. Não exclua o PostgreSQL e não altere a `DATABASE_URL`.
+Mantenha:
+- o serviço PostgreSQL no Railway;
+- a variável `DATABASE_URL`.
 
-O `schema.sql` cria automaticamente as novas tabelas financeiras sem apagar Linha do Dia ou ENAM.
+Não apague o banco.
+
+As antigas tabelas de módulos que deixaram de existir podem continuar no PostgreSQL. Elas foram mantidas para evitar exclusão destrutiva de dados, mas não aparecem mais na aplicação.

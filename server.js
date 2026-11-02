@@ -496,6 +496,7 @@ async function handleApi(req, res, url) {
     const [
       transactionsResult,
       categoriesResult,
+      categoryCatalogResult,
       budgetsResult,
       yearResult,
       reserveAccountsResult,
@@ -518,6 +519,13 @@ async function handleApi(req, res, url) {
          FROM ld4_finance_categories
          WHERE owner_scope = $1
            AND active = TRUE
+         ORDER BY sort_order, name`,
+        [scope]
+      ),
+      pool.query(
+        `SELECT id, name, sort_order, active
+         FROM ld4_finance_categories
+         WHERE owner_scope = $1
          ORDER BY sort_order, name`,
         [scope]
       ),
@@ -620,6 +628,12 @@ async function handleApi(req, res, url) {
         id: row.id,
         name: row.name,
         sortOrder: Number(row.sort_order || 0)
+      })),
+      categoryCatalog: categoryCatalogResult.rows.map(row => ({
+        id: row.id,
+        name: row.name,
+        sortOrder: Number(row.sort_order || 0),
+        active: Boolean(row.active)
       })),
       budgets: budgetsResult.rows.map(row => ({
         year: Number(row.year),
@@ -854,6 +868,67 @@ async function handleApi(req, res, url) {
     });
 
     return true;
+  }
+
+  if (req.method === "DELETE" && categoryMatch) {
+    const scope = requestScope(url);
+    const id = decodeURIComponent(categoryMatch[1]);
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const categoryResult = await client.query(
+        `SELECT id, name
+         FROM ld4_finance_categories
+         WHERE id = $1
+           AND owner_scope = $2
+           AND active = TRUE
+         LIMIT 1`,
+        [id, scope]
+      );
+
+      if (!categoryResult.rows.length) {
+        await client.query("ROLLBACK");
+        sendJson(res, 404, { error: "Categoria não encontrada." });
+        return true;
+      }
+
+      await client.query(
+        `UPDATE ld4_finance_recurring_rules
+         SET active = FALSE,
+             updated_at = NOW()
+         WHERE category_id = $1
+           AND owner_scope = $2
+           AND active = TRUE`,
+        [id, scope]
+      );
+
+      await client.query(
+        `UPDATE ld4_finance_categories
+         SET active = FALSE,
+             updated_at = NOW()
+         WHERE id = $1
+           AND owner_scope = $2`,
+        [id, scope]
+      );
+
+      await client.query("COMMIT");
+
+      sendJson(res, 200, {
+        ok: true,
+        category: {
+          id,
+          name: categoryResult.rows[0].name
+        }
+      });
+      return true;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   if (req.method === "POST" && url.pathname === "/api/finance/transactions") {

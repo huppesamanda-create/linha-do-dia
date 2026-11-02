@@ -142,7 +142,7 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
 .category-manager-button:hover{background:#0d0d0d;color:#8b8b8b}
 .category-manager-list{border-top:1px solid #1d1d1d;margin-top:12px}
 .category-manager-row{
-  display:grid;grid-template-columns:minmax(0,1fr) 118px auto;gap:9px;align-items:end;
+  display:grid;grid-template-columns:minmax(0,1fr) 118px auto auto;gap:9px;align-items:end;
   padding:10px 0;border-bottom:1px solid #111
 }
 .category-manager-row .field{min-width:0}
@@ -151,6 +151,10 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
   width:30px;height:31px;border:0;border-radius:5px;background:transparent;color:#515151;padding:0
 }
 .category-manager-save:hover{background:#101010;color:#bbb}
+.category-manager-delete{
+  width:30px;height:31px;border:0;border-radius:5px;background:transparent;color:#4f3535;padding:0;font-size:14px
+}
+.category-manager-delete:hover{background:#160c0c;color:#b56f6f}
 .new-category-row{display:flex;gap:8px;margin-top:15px}
 .new-category-row input{
   min-width:0;flex:1;border:1px solid #202020;border-radius:7px;background:#070707;color:#aaa;
@@ -570,6 +574,7 @@ let yearOpeningBalance=0;
 let testDraft=null;
 let transactions=[];
 let categories=[];
+let categoryCatalog=[];
 let budgets=[];
 let reserveAccounts=[];
 let investmentAccounts=[];
@@ -614,7 +619,7 @@ function daysInMonth(m,y=currentYear){return new Date(y,m+1,0).getDate()}
 function txMonth(m){return transactions.filter(t=>t.year===currentYear&&t.month===m)}
 function txDay(m,d){return txMonth(m).filter(t=>t.day===d)}
 function sum(v){return v.reduce((a,b)=>a+Number(b||0),0)}
-function categoryName(id){return categories.find(c=>c.id===id)?.name||'—'}
+function categoryName(id){return categoryCatalog.find(c=>c.id===id)?.name||categories.find(c=>c.id===id)?.name||'—'}
 function budgetAmount(month,category){return Number(budgets.find(b=>b.month===month&&b.category===category)?.amount||0)}
 function monthKey(year,month){return `${year}-${String(month+1).padStart(2,'0')}`}
 function recurringRulesForCategory(category){return recurringRules.filter(r=>r.category===category&&r.active!==false)}
@@ -1203,7 +1208,38 @@ function renderCategoryManager(){
       }
     });
 
-    row.append(nameField,budgetField,save);
+    const remove=document.createElement('button');
+    remove.type='button';
+    remove.className='category-manager-delete';
+    remove.textContent='×';
+    remove.title='Excluir categoria';
+
+    remove.addEventListener('click',async()=>{
+      const message=`Excluir a categoria "${cat.name}"?\n\nEla deixará de aparecer em novos lançamentos e orçamentos. Os lançamentos antigos continuarão preservados com o nome da categoria.`;
+      if(!confirm(message))return;
+
+      remove.disabled=true;
+      save.disabled=true;
+      $('#categoryManagerError').textContent='';
+
+      try{
+        await api(`/api/finance/categories/${encodeURIComponent(cat.id)}`,{method:'DELETE'});
+
+        if(selectedBudgetCategory===cat.id){
+          selectedBudgetCategory=null;
+          budgetDetailBackdrop.classList.remove('open')
+        }
+
+        await loadYear(currentYear,false);
+        renderCategoryManager()
+      }catch(error){
+        $('#categoryManagerError').textContent=error.message;
+        remove.disabled=false;
+        save.disabled=false
+      }
+    });
+
+    row.append(nameField,budgetField,save,remove);
     box.appendChild(row)
   })
 }
@@ -1881,6 +1917,7 @@ async function loadYear(year,scroll=true){
     yearOpeningBalance=Number(state.openingBalance||0);
     warningThreshold=Number(state.warningThreshold??1000);
     categories=Array.isArray(state.categories)?state.categories:[];
+    categoryCatalog=Array.isArray(state.categoryCatalog)?state.categoryCatalog:categories.map(c=>({...c,active:true}));
     budgets=Array.isArray(state.budgets)?state.budgets:[];
     transactions=Array.isArray(state.transactions)?state.transactions:[];
     reserveAccounts=Array.isArray(state.reserveAccounts)?state.reserveAccounts:[];

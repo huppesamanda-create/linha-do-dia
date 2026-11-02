@@ -231,12 +231,27 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
 .investment-lot{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid #111}.investment-lot strong{display:block;color:#8f8f8f;font-size:9px}.investment-lot small{display:block;color:#444;font-size:7px}.investment-lot b{color:#8d8d8d;font-size:9px}
 @media(max-width:900px){.investment-grid{grid-template-columns:1fr}.portfolio-strip{grid-template-columns:1fr 1fr}}
 
+
+.scope-switch-wrap{display:flex;align-items:center;gap:10px}
+.scope-name{color:#4d4d4d;font-size:9px;text-align:right}
+.scope-tabs{display:flex;align-items:center;padding:3px;border:1px solid #1c1c1c;border-radius:8px;background:#070707}
+.scope-tab{border:0;background:transparent;color:#525252;padding:7px 16px;border-radius:6px;font-size:9px;font-weight:800;letter-spacing:.07em}
+.scope-tab.active{background:#171717;color:#d0d0d0}
+@media(max-width:700px){.topbar{align-items:flex-start}.scope-switch-wrap{flex-direction:column;align-items:flex-end}}
+
 </style>
 </head>
 <body>
 <main class="shell">
 <header class="topbar">
-  <div><div class="kicker">Fluxo de caixa</div><h1>Financeiro</h1></div>
+  <div><div class="kicker" id="scopeKicker">Fluxo de caixa pessoal</div><h1>Financeiro</h1></div>
+  <div class="scope-switch-wrap">
+    <div class="scope-name" id="scopeName">Pessoa Física</div>
+    <div class="scope-tabs" role="tablist" aria-label="Alternar entre pessoa física e pessoa jurídica">
+      <button class="scope-tab active" type="button" data-finance-scope="pf">PF</button>
+      <button class="scope-tab" type="button" data-finance-scope="pj">PJ</button>
+    </div>
+  </div>
 </header>
 
 <div id="financeError" style="display:none;margin-bottom:20px;padding:10px 12px;border:1px solid #2b1f1f;border-radius:7px;color:#a67b7b;font-size:10px;background:#090707"></div>
@@ -245,7 +260,7 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
   <div>
     <div class="kicker">Fluxo de caixa anual</div>
     <h2>Visão dos 12 meses</h2>
-    <p>Clique em Entrada, Saída ou Diário para lançar e testar valores. A coluna Reserva tira dinheiro do disponível sem transformar isso em gasto.</p>
+    <p id="scopeHeadline">Clique em Entrada, Saída ou Diário para lançar e testar valores. A coluna Reserva tira dinheiro do disponível sem transformar isso em gasto.</p>
   </div>
   <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
     <div class="year-switch">
@@ -261,16 +276,16 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
 
 <section class="metrics">
   <div class="metric"><label>Mês selecionado</label><strong id="mMonth">Agosto</strong><small>clique no mês na grade</small></div>
-  <div class="metric"><label>Saldo disponível</label><strong class="good" id="mReal">R$ 0,00</strong><small>dinheiro livre hoje</small></div>
-  <div class="metric"><label>Saldo projetado</label><strong id="mProjected">R$ 0,00</strong><small>disponível após provisões</small></div>
-  <div class="metric"><label>Reservas e investimentos</label><strong id="mReserves">R$ 0,00</strong><small id="mReservesSub">valor guardado</small></div>
-  <div class="metric"><label>Patrimônio financeiro</label><strong id="mNetWorth">R$ 0,00</strong><small id="mNetWorthSub">disponível + guardado</small></div>
+  <div class="metric"><label id="mRealLabel">Saldo disponível</label><strong class="good" id="mReal">R$ 0,00</strong><small>dinheiro livre hoje</small></div>
+  <div class="metric"><label id="mProjectedLabel">Saldo projetado</label><strong id="mProjected">R$ 0,00</strong><small>disponível após provisões</small></div>
+  <div class="metric"><label id="mReservesLabel">Reservas e investimentos</label><strong id="mReserves">R$ 0,00</strong><small id="mReservesSub">valor guardado</small></div>
+  <div class="metric"><label id="mNetWorthLabel">Patrimônio financeiro</label><strong id="mNetWorth">R$ 0,00</strong><small id="mNetWorthSub">disponível + guardado</small></div>
 </section>
 
 <div class="safety-row">
   <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
     <div class="safety-control">
-      <label for="openingBalance">Saldo inicial do ano</label>
+      <label for="openingBalance" id="openingBalanceLabel">Saldo inicial do ano</label>
       <input id="openingBalance" type="number" step="100" value="0">
     </div>
     <div class="safety-control">
@@ -301,7 +316,7 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
     <div class="section-title">
       <div class="kicker">Orçamentos · <span class="selected-month" id="budgetMonth">Agosto</span></div>
       <div class="budget-title-line">
-        <h2>Limites por categoria</h2>
+        <h2 id="budgetTitle">Limites por categoria</h2>
         <button
           class="category-manager-button"
           id="categoryManagerButton"
@@ -310,7 +325,7 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
           aria-label="Gerenciar categorias e orçamentos"
         >···</button>
       </div>
-      <p>O orçamento continua separado da grade para ela permanecer limpa.</p>
+      <p id="budgetCopy">O orçamento continua separado da grade para ela permanecer limpa.</p>
     </div>
     <table class="budget-table">
       <thead><tr><th>Categoria</th><th>Orçamento</th><th>Realizado</th><th>Provisionado</th><th>Disponível</th></tr></thead>
@@ -321,7 +336,7 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
     <div class="section-title">
       <div class="kicker">Leitura rápida · <span class="selected-month" id="summaryMonth">Agosto</span></div>
       <h2>Fechamento do mês</h2>
-      <p>O teste afeta apenas a projeção até você decidir salvá-lo.</p>
+      <p id="summaryCopy">O teste afeta apenas a projeção até você decidir salvá-lo.</p>
     </div>
     <div class="summary-box">
       <div class="summary-line"><span>Entradas realizadas</span><strong id="sIncome"></strong></div>
@@ -342,11 +357,11 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
 <section class="reserve-grid">
   <div class="investment-head">
     <div>
-      <div class="kicker">Patrimônio separado do dinheiro de gastar</div>
+      <div class="kicker" id="assetKicker">Patrimônio separado do dinheiro de gastar</div>
       <div class="reserve-title-line">
-        <h2>Reservas e investimentos</h2>
+        <h2 id="assetTitle">Reservas e investimentos</h2>
       </div>
-      <p>Guardar reduz o saldo disponível sem virar despesa. Nos Prefixados, a posição atual fica separada do valor contratado no vencimento.</p>
+      <p id="assetCopy">Guardar reduz o saldo disponível sem virar despesa. Nos Prefixados, a posição atual fica separada do valor contratado no vencimento.</p>
     </div>
     <div class="investment-head-actions">
       <button class="btn" id="reserveWithdrawButton" type="button">↙ Resgatar</button>
@@ -356,15 +371,15 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
   </div>
 
   <div class="portfolio-strip">
-    <div class="port-stat"><span>Posição atual total</span><b id="portfolioCurrent">—</b></div>
-    <div class="port-stat"><span>Total aportado</span><b id="portfolioContributed">—</b></div>
-    <div class="port-stat"><span>Projetado bruto no vencimento</span><b class="good" id="portfolioMaturity">—</b></div>
-    <div class="port-stat"><span>Ganho contratado futuro*</span><b class="good" id="portfolioFutureGain">—</b></div>
+    <div class="port-stat"><span id="portfolioLabel1">Posição atual total</span><b id="portfolioCurrent">—</b></div>
+    <div class="port-stat"><span id="portfolioLabel2">Total aportado</span><b id="portfolioContributed">—</b></div>
+    <div class="port-stat"><span id="portfolioLabel3">Projetado bruto no vencimento</span><b class="good" id="portfolioMaturity">—</b></div>
+    <div class="port-stat"><span id="portfolioLabel4">Ganho contratado futuro*</span><b class="good" id="portfolioFutureGain">—</b></div>
   </div>
 
   <div class="investment-grid" id="reserveList"></div>
 
-  <div class="investment-notice">
+  <div class="investment-notice" id="assetNotice">
     *No Tesouro Prefixado, a taxa é contratada em cada compra. Se você carregar o título até o vencimento, a projeção segue aquela taxa. Antes disso, a posição pode subir ou cair por marcação a mercado; uma venda antecipada pode gerar retorno maior ou menor que o contratado.
   </div>
 </section>
@@ -558,6 +573,7 @@ let categories=[];
 let budgets=[];
 let reserveAccounts=[];
 let investmentAccounts=[];
+let financeScope=localStorage.getItem('finance_scope')==='pj'?'pj':'pf';
 let reserveTransfers=[];
 let recurringRules=[];
 let selectedBudgetCategory=null;
@@ -569,7 +585,24 @@ let formMode='expense';
 
 
 async function api(path,options={}){
-  const response=await fetch(path,{headers:{'Content-Type':'application/json',...(options.headers||{})},...options});
+  let finalPath=path;
+  let finalOptions={...options};
+
+  if(String(path).startsWith('/api/finance/')){
+    finalPath+=path.includes('?')?`&scope=${encodeURIComponent(financeScope)}`:`?scope=${encodeURIComponent(financeScope)}`;
+
+    if(options.body){
+      try{
+        const parsed=JSON.parse(options.body);
+        if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed)){
+          parsed.scope=financeScope;
+          finalOptions.body=JSON.stringify(parsed)
+        }
+      }catch{}
+    }
+  }
+
+  const response=await fetch(finalPath,{headers:{'Content-Type':'application/json',...(options.headers||{})},...finalOptions});
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(data.error||'Não foi possível concluir a operação.');
   return data;
@@ -687,11 +720,17 @@ function modelDay(model,m,d){return model.daily.find(x=>x.month===m&&x.day===d)}
 function balanceClass(value,simulated){let c=value<0?'balance-negative':value<warningThreshold?'balance-warning':'balance-positive';if(simulated)c+=' balance-simulated';return c}
 function entryClass(items,type){if(!items.length)return 'entry-cell';const hasProv=items.some(t=>t.status==='provisioned');return `${type==='income'?'real-in':'real-out'} ${hasProv?'provisioned':''}`}
 
-function renderAll(){buildAnnualTable();renderSelectedMonth();renderTestBar();$('#yearLabel').textContent=currentYear;$('#openingBalance').value=yearOpeningBalance;$('#warningThreshold').value=warningThreshold}
+function renderAll(){applyScopeUI();buildAnnualTable();renderSelectedMonth();renderTestBar();$('#yearLabel').textContent=currentYear;$('#openingBalance').value=yearOpeningBalance;$('#warningThreshold').value=warningThreshold}
 
 function buildAnnualTable(){
   const model=buildCashModel(),table=$('#annualTable');let cols='',h1='<tr class="month-head">',h2='<tr class="sub-head">';
-  for(let m=0;m<12;m++){cols+='<col class="date"><col class="money"><col class="money"><col class="money"><col class="reserve"><col class="money">';h1+=`<th colspan="6" data-month="${m}" class="${m===selectedMonth?'selected':''} month-end">${MONTHS[m]}</th>`;h2+='<th class="date-col">Data</th><th>Entrada</th><th>Saída</th><th>Diário</th><th>Reserva</th><th class="month-end">Saldo</th>'}
+  for(let m=0;m<12;m++){
+    cols+='<col class="date"><col class="money"><col class="money"><col class="money"><col class="reserve"><col class="money">';
+    h1+=`<th colspan="6" data-month="${m}" class="${m===selectedMonth?'selected':''} month-end">${MONTHS[m]}</th>`;
+    h2+=financeScope==='pj'
+      ?'<th class="date-col">Data</th><th>Receita</th><th>Despesa</th><th>Variável</th><th>Reserva</th><th class="month-end">Caixa</th>'
+      :'<th class="date-col">Data</th><th>Entrada</th><th>Saída</th><th>Diário</th><th>Reserva</th><th class="month-end">Saldo</th>'
+  }
   h1+='</tr>';h2+='</tr>';let body='<tbody>';
   for(let d=1;d<=31;d++){
     body+='<tr>';
@@ -760,19 +799,52 @@ $('#discardTest').addEventListener('click',discardTest);
 function renderTestBar(){const bar=$('#testBar'),status=$('#simulationStatus');if(!testDraft){bar.classList.remove('visible');status.classList.remove('visible');return}status.classList.add('visible');bar.classList.add('visible');const kind=testDraft.type==='income'?'Entrada':testDraft.nature==='daily'?'Diário':'Saída';
   $('#testCopy').innerHTML=`Teste: <strong>${BRL.format(Number(testDraft.value||0))}</strong> em ${testDraft.day} de ${MONTHS[testDraft.month].toLowerCase()} · ${kind}. As células à frente já mostram o impacto.`}
 
+function applyScopeUI(){
+  const pj=financeScope==='pj';
+
+  $('#scopeKicker').textContent=pj?'Fluxo de caixa da empresa':'Fluxo de caixa pessoal';
+  $('#scopeName').textContent=pj?'Pessoa Jurídica':'Pessoa Física';
+  document.querySelectorAll('[data-finance-scope]').forEach(button=>button.classList.toggle('active',button.dataset.financeScope===financeScope));
+
+  $('#scopeHeadline').textContent=pj
+    ?'Receitas, despesas e reservas da empresa ficam separadas da sua vida pessoal.'
+    :'Clique em Entrada, Saída ou Diário para lançar e testar valores. A coluna Reserva tira dinheiro do disponível sem transformar isso em gasto.';
+
+  $('#addIncome').textContent=pj?'+ receita':'+ entrada';
+  $('#addExpense').textContent=pj?'+ despesa':'+ gasto';
+  $('#addReserve').textContent=pj?'↗ separar caixa':'↗ guardar';
+
+  $('#mRealLabel').textContent=pj?'Caixa disponível':'Saldo disponível';
+  $('#mProjectedLabel').textContent=pj?'Caixa projetado':'Saldo projetado';
+  $('#mReservesLabel').textContent=pj?'Valores reservados':'Reservas e investimentos';
+  $('#mNetWorthLabel').textContent=pj?'Patrimônio da PJ':'Patrimônio financeiro';
+  $('#openingBalanceLabel').textContent=pj?'Caixa inicial do ano':'Saldo inicial do ano';
+
+  $('#budgetTitle').textContent=pj?'Custos e limites da empresa':'Limites por categoria';
+  $('#budgetCopy').textContent=pj
+    ?'Categorias próprias da PJ, sem misturar com o orçamento pessoal.'
+    :'O orçamento continua separado da grade para ela permanecer limpa.';
+  $('#summaryCopy').textContent=pj
+    ?'Resumo exclusivo da operação da empresa.'
+    :'O teste afeta apenas a projeção até você decidir salvá-lo.';
+
+  $('#modalHelper').textContent='Provisionado afeta a projeção. Realizado afeta também o saldo atual.'
+}
+
 function renderSelectedMonth(){
   const model=buildCashModel(),t=model.monthStats[selectedMonth];
   $('#mMonth').textContent=MONTHS[selectedMonth];
   $('#mReal').textContent=BRL.format(t.endReal);
   $('#mProjected').textContent=BRL.format(t.endProjected);
   $('#mProjected').className=t.endProjected<0?'bad':t.endProjected<warningThreshold?'warn':'';
-  const officialInvestments=investmentAccounts.filter(a=>['emergency','treasury-2029','treasury-2032'].includes(a.systemKey));
-  const investmentCurrent=sum(officialInvestments.map(a=>Number(a.currentValue||0)));
-  const investmentContributed=sum(officialInvestments.map(a=>Number(a.contributed||0)));
+  const allowedKeys=financeScope==='pj'?['pj-tax','pj-operating']:['emergency','treasury-2029','treasury-2032'];
+  const scopedAssets=investmentAccounts.filter(a=>allowedKeys.includes(a.systemKey));
+  const investmentCurrent=sum(scopedAssets.map(a=>Number(a.currentValue||0)));
+  const investmentContributed=sum(scopedAssets.map(a=>Number(a.contributed||0)));
   $('#mReserves').textContent=BRL.format(investmentCurrent);
-  $('#mReservesSub').textContent=`${BRL.format(investmentContributed)} aportados`;
+  $('#mReservesSub').textContent=financeScope==='pj'?`${BRL.format(investmentContributed)} separados`:`${BRL.format(investmentContributed)} aportados`;
   $('#mNetWorth').textContent=BRL.format(t.endReal+investmentCurrent);
-  $('#mNetWorthSub').textContent='disponível + posição atual';
+  $('#mNetWorthSub').textContent=financeScope==='pj'?'caixa + valores reservados':'disponível + posição atual';
   $('#budgetMonth').textContent=MONTHS[selectedMonth];
   $('#summaryMonth').textContent=MONTHS[selectedMonth];
   $('#sIncome').textContent=BRL.format(t.incomeReal);
@@ -1181,7 +1253,11 @@ $('#newCategoryName').addEventListener('keydown',e=>{
 
 
 function preferredReserveAccounts(){
-  return reserveAccounts.filter(a=>['emergency','treasury-2029','treasury-2032'].includes(a.systemKey))
+  const keys=financeScope==='pj'
+    ?['pj-tax','pj-operating']
+    :['emergency','treasury-2029','treasury-2032'];
+
+  return reserveAccounts.filter(a=>keys.includes(a.systemKey))
 }
 
 function populateReserveSelect(){
@@ -1236,17 +1312,107 @@ function renderReserves(){
   const box=$('#reserveList');
   box.innerHTML='';
 
-  const accounts=investmentAccounts.filter(a=>['emergency','treasury-2029','treasury-2032'].includes(a.systemKey)).sort((a,b)=>{
-    const order={'emergency':1,'treasury-2029':2,'treasury-2032':3};
-    const ao=order[a.systemKey]||20;
-    const bo=order[b.systemKey]||20;
-    return ao-bo||Number(a.sortOrder||0)-Number(b.sortOrder||0)
-  });
+  if(financeScope==='pj'){
+    const keys=['pj-tax','pj-operating'];
+    const accounts=investmentAccounts.filter(a=>keys.includes(a.systemKey));
+    const model=buildCashModel();
+    const month=model.monthStats[selectedMonth];
+    const operational=Number(month?.endReal||0);
+    const projected=Number(month?.endProjected||0);
+    const reserved=sum(accounts.map(a=>Number(a.currentValue||0)));
+    const companyTotal=operational+reserved;
 
-  if(!accounts.length){
-    box.innerHTML='<div class="helper" style="padding:12px 0">Nenhuma reserva cadastrada.</div>';
+    $('#assetKicker').textContent='Dinheiro da empresa separado por finalidade';
+    $('#assetTitle').textContent='Caixa da empresa';
+    $('#assetCopy').textContent='Nem todo saldo da PJ está realmente livre. Separe impostos e segurança operacional antes de pensar em transferências para a PF.';
+    $('#portfolioLabel1').textContent='Caixa total da PJ';
+    $('#portfolioLabel2').textContent='Disponível operacional';
+    $('#portfolioLabel3').textContent='Valores reservados';
+    $('#portfolioLabel4').textContent='Caixa projetado';
+    $('#portfolioCurrent').textContent=BRL.format(companyTotal);
+    $('#portfolioContributed').textContent=BRL.format(operational);
+    $('#portfolioMaturity').textContent=BRL.format(reserved);
+    $('#portfolioFutureGain').textContent=BRL.format(projected);
+    $('#investmentUpdateValues').style.display='none';
+    $('#reserveWithdrawButton').textContent='↙ utilizar reserva';
+    $('#reserveDepositButton').textContent='↗ separar caixa';
+    $('#assetNotice').textContent='A aba PJ é independente da PF. Transferir dinheiro da empresa para a pessoa física deve ser registrado em cada lado conforme a natureza da retirada e a orientação contábil aplicável.';
+
+    const operatingCard=document.createElement('article');
+    operatingCard.className='investment-card';
+    operatingCard.innerHTML=`
+      <div class="investment-card-head">
+        <div>
+          <div class="investment-name">Conta operacional</div>
+          <div class="investment-type">movimentação corrente da empresa</div>
+        </div>
+        <span class="investment-pill">operacional</span>
+      </div>
+      <div class="investment-value">${BRL.format(operational)}</div>
+      <div class="investment-value-label">caixa disponível</div>
+      <div class="investment-meta">
+        <div><span>Projetado</span><b>${BRL.format(projected)}</b></div>
+        <div><span>Reservado fora do caixa</span><b>${BRL.format(reserved)}</b></div>
+      </div>
+      <div class="investment-bars">${[28,34,41,48,52,60,66,71,78,84,91,98].map(v=>`<i style="height:${v}%"></i>`).join('')}</div>
+      <div class="investment-chart-note">evolução visual do caixa operacional</div>`;
+    box.appendChild(operatingCard);
+
+    accounts.forEach(account=>{
+      const card=document.createElement('article');
+      card.className='investment-card';
+      const label=account.systemKey==='pj-tax'?'valores separados para tributos':'segurança financeira do escritório';
+      const pill=account.systemKey==='pj-tax'?'não gastar':'reserva';
+
+      card.innerHTML=`
+        <div class="investment-card-head">
+          <div>
+            <div class="investment-name">${escapeHtml(account.name)}</div>
+            <div class="investment-type">${label}</div>
+          </div>
+          <span class="investment-pill ${account.systemKey==='pj-tax'?'lock':''}">${pill}</span>
+        </div>
+        <div class="investment-value">${BRL.format(Number(account.currentValue||0))}</div>
+        <div class="investment-value-label">valor separado</div>
+        <div class="investment-meta">
+          <div><span>Aportes líquidos</span><b>${BRL.format(Number(account.contributed||0))}</b></div>
+          <div><span>Movimentações</span><b>${(account.lots||[]).length}</b></div>
+        </div>
+        <div class="investment-bars">${investmentBars(account)}</div>
+        <div class="investment-chart-note">evolução do caixa separado</div>
+        <div class="investment-actions">
+          <button class="investment-link" type="button" data-invest-detail="${account.id}">ver evolução</button>
+          <button class="investment-link" type="button" data-invest-save="${account.id}">+ separar</button>
+        </div>`;
+      box.appendChild(card)
+    });
+
+    box.querySelectorAll('[data-invest-save]').forEach(button=>button.addEventListener('click',()=>{
+      openReserveTransferModal('to_reserve',selectedMonth,'');
+      $('#rAccount').value=button.dataset.investSave;
+      refreshReserveRateField()
+    }));
+
+    box.querySelectorAll('[data-invest-detail]').forEach(button=>button.addEventListener('click',()=>openInvestmentDetail(button.dataset.investDetail)));
     return
   }
+
+  const accounts=investmentAccounts.filter(a=>['emergency','treasury-2029','treasury-2032'].includes(a.systemKey)).sort((a,b)=>{
+    const order={'emergency':1,'treasury-2029':2,'treasury-2032':3};
+    return (order[a.systemKey]||20)-(order[b.systemKey]||20)||Number(a.sortOrder||0)-Number(b.sortOrder||0)
+  });
+
+  $('#assetKicker').textContent='Patrimônio separado do dinheiro de gastar';
+  $('#assetTitle').textContent='Reservas e investimentos';
+  $('#assetCopy').textContent='Guardar reduz o saldo disponível sem virar despesa. Nos Prefixados, a posição atual fica separada do valor contratado no vencimento.';
+  $('#portfolioLabel1').textContent='Posição atual total';
+  $('#portfolioLabel2').textContent='Total aportado';
+  $('#portfolioLabel3').textContent='Projetado bruto no vencimento';
+  $('#portfolioLabel4').textContent='Ganho contratado futuro*';
+  $('#investmentUpdateValues').style.display='';
+  $('#reserveWithdrawButton').textContent='↙ Resgatar';
+  $('#reserveDepositButton').textContent='↗ Guardar dinheiro';
+  $('#assetNotice').textContent='*No Tesouro Prefixado, a taxa é contratada em cada compra. Se você carregar o título até o vencimento, a projeção segue aquela taxa. Antes disso, a posição pode subir ou cair por marcação a mercado.';
 
   let currentTotal=0;
   let contributedTotal=0;
@@ -1271,15 +1437,12 @@ function renderReserves(){
         </div>
         <span class="investment-pill ${treasury?'lock':''}">${treasury?'até o vencimento':'liquidez'}</span>
       </div>
-
       <div class="investment-value">${BRL.format(Number(account.currentValue||0))}</div>
       <div class="investment-value-label">${treasury?'posição atual informada':'saldo atual'}</div>
-
       <div class="investment-meta">
         <div><span>Aportado</span><b>${BRL.format(Number(account.contributed||0))}</b></div>
         <div><span>${treasury?'Mercado x aportado':'Diferença'}</span><b class="${marketGain>=0?'good':'bad'}">${marketGain>=0?'+ ':''}${BRL.format(marketGain)}</b></div>
       </div>
-
       ${treasury?`
         <div class="contract-box">
           <div class="contract-line"><span>Taxa dos lotes</span><b>${investmentRateLabel(account.weightedRate??account.defaultRate)}</b></div>
@@ -1287,15 +1450,12 @@ function renderReserves(){
           <div class="contract-line"><span>Ganho contratado futuro</span><b class="good">${futureGain>=0?'+ ':''}${BRL.format(futureGain)}</b></div>
         </div>
       `:''}
-
       <div class="investment-bars">${investmentBars(account)}</div>
       <div class="investment-chart-note">${account.valuations?.length?'evolução das posições informadas':'evolução dos aportes registrados'}</div>
-
       <div class="investment-actions">
         <button class="investment-link" type="button" data-invest-detail="${account.id}">ver lotes e evolução</button>
         <button class="investment-link" type="button" data-invest-save="${account.id}">+ aportar</button>
       </div>`;
-
     box.appendChild(card)
   });
 
@@ -1506,7 +1666,7 @@ function openInvestmentUpdate(){
   const box=$('#investmentUpdateFields');
   box.innerHTML='';
 
-  investmentAccounts.filter(a=>['emergency','treasury-2029','treasury-2032'].includes(a.systemKey)).forEach(account=>{
+  investmentAccounts.filter(a=>financeScope==='pj'?['pj-tax','pj-operating'].includes(a.systemKey):['emergency','treasury-2029','treasury-2032'].includes(a.systemKey)).forEach(account=>{
     const field=document.createElement('div');
     field.className='field full';
     field.innerHTML=`<label>${escapeHtml(account.name)} · posição atual</label><input data-investment-current="${account.id}" type="number" min="0" step="0.01" value="${Number(account.currentValue||0).toFixed(2)}">`;
@@ -1516,7 +1676,7 @@ function openInvestmentUpdate(){
   investmentUpdateBackdrop.classList.add('open')
 }
 
-$('#investmentUpdateValues').addEventListener('click',openInvestmentUpdate);
+$('#investmentUpdateValues').addEventListener('click',()=>{if(financeScope==='pf')openInvestmentUpdate()});
 $('#closeInvestmentUpdate').addEventListener('click',()=>investmentUpdateBackdrop.classList.remove('open'));
 $('#cancelInvestmentUpdate').addEventListener('click',()=>investmentUpdateBackdrop.classList.remove('open'));
 investmentUpdateBackdrop.addEventListener('click',e=>{if(e.target===investmentUpdateBackdrop)investmentUpdateBackdrop.classList.remove('open')});
@@ -1654,7 +1814,7 @@ reserveTransferModal.addEventListener('click',e=>{if(e.target===reserveTransferM
 $('#closeReserveManagerModal').addEventListener('click',()=>reserveManagerModal.classList.remove('open'));
 reserveManagerModal.addEventListener('click',e=>{if(e.target===reserveManagerModal)reserveManagerModal.classList.remove('open')});
 
-function openModal(mode){editingTransactionId=null;savingTest=false;formMode=mode;$('#modalTitle').textContent=mode==='expense'?'Registrar gasto':'Registrar entrada';$('#modalKicker').textContent=mode==='expense'?'Novo gasto':'Nova entrada';$('#natureField').style.display=mode==='expense'?'block':'none';$('#categoryField').style.display=mode==='expense'?'block':'none';$('#fMonth').value=String(selectedMonth);$('#fDate').value='';$('#fValue').value='';$('#fDescription').value='';$('#fStatus').value='provisioned';$('#modalHelper').textContent='Provisionado afeta o saldo projetado. Realizado afeta também o saldo real.';modal.classList.add('open')}
+function openModal(mode){editingTransactionId=null;savingTest=false;formMode=mode;const pj=financeScope==='pj';$('#modalTitle').textContent=mode==='expense'?(pj?'Registrar despesa':'Registrar gasto'):(pj?'Registrar receita':'Registrar entrada');$('#modalKicker').textContent=mode==='expense'?(pj?'Nova despesa':'Novo gasto'):(pj?'Nova receita':'Nova entrada');$('#natureField').style.display=mode==='expense'?'block':'none';$('#categoryField').style.display=mode==='expense'?'block':'none';$('#fMonth').value=String(selectedMonth);$('#fDate').value='';$('#fValue').value='';$('#fDescription').value='';$('#fStatus').value='provisioned';$('#modalHelper').textContent='Provisionado afeta o saldo projetado. Realizado afeta também o saldo real.';modal.classList.add('open')}
 function openEditModal(t){editingTransactionId=t.id;savingTest=false;formMode=t.type;$('#modalTitle').textContent='Editar lançamento';$('#modalKicker').textContent=t.type==='expense'?'Gasto':'Entrada';$('#natureField').style.display=t.type==='expense'?'block':'none';$('#categoryField').style.display=t.type==='expense'?'block':'none';$('#fMonth').value=String(t.month);$('#fDate').value=String(t.day);$('#fValue').value=String(t.value);if(t.type==='expense'){$('#fNature').value=t.nature;$('#fCategory').value=t.category}$('#fStatus').value=t.status;$('#fDescription').value=t.description||'';$('#dayDrawer').classList.remove('open');modal.classList.add('open')}
 function openSaveTestModal(){
   if(!testDraft||!Number(testDraft.value))return;
@@ -1683,7 +1843,7 @@ MONTHS.forEach((name,i)=>{
   const o=document.createElement('option');o.value=i;o.textContent=name;$('#fMonth').appendChild(o);
   const r=document.createElement('option');r.value=i;r.textContent=name;$('#rMonth').appendChild(r)
 });
-$('#entryForm').addEventListener('submit',async e=>{e.preventDefault();const month=Number($('#fMonth').value),day=Number($('#fDate').value),value=Number($('#fValue').value);if(!value||day<1||day>daysInMonth(month))return;const payload={year:currentYear,month,day,type:formMode,value,nature:formMode==='expense'?$('#fNature').value:null,category:formMode==='expense'?$('#fCategory').value:null,status:$('#fStatus').value,description:$('#fDescription').value.trim()||(formMode==='expense'?'Gasto':'Entrada')};try{if(editingTransactionId)await api(`/api/finance/transactions/${encodeURIComponent(editingTransactionId)}`,{method:'PUT',body:JSON.stringify(payload)});else await api('/api/finance/transactions',{method:'POST',body:JSON.stringify(payload)});selectedMonth=month;if(savingTest)testDraft=null;modal.classList.remove('open');await loadYear(currentYear,false);scrollToMonth(month,false)}catch(err){showError(err.message)}});
+$('#entryForm').addEventListener('submit',async e=>{e.preventDefault();const month=Number($('#fMonth').value),day=Number($('#fDate').value),value=Number($('#fValue').value);if(!value||day<1||day>daysInMonth(month))return;const payload={year:currentYear,month,day,type:formMode,value,nature:formMode==='expense'?$('#fNature').value:null,category:formMode==='expense'?$('#fCategory').value:null,status:$('#fStatus').value,description:$('#fDescription').value.trim()||(formMode==='expense'?(financeScope==='pj'?'Despesa':'Gasto'):(financeScope==='pj'?'Receita':'Entrada'))};try{if(editingTransactionId)await api(`/api/finance/transactions/${encodeURIComponent(editingTransactionId)}`,{method:'PUT',body:JSON.stringify(payload)});else await api('/api/finance/transactions',{method:'POST',body:JSON.stringify(payload)});selectedMonth=month;if(savingTest)testDraft=null;modal.classList.remove('open');await loadYear(currentYear,false);scrollToMonth(month,false)}catch(err){showError(err.message)}});
 
 async function saveYearSettings(){try{await api('/api/finance/year',{method:'PUT',body:JSON.stringify({year:currentYear,openingBalance:yearOpeningBalance,warningThreshold})});showError('')}catch(e){showError(e.message)}}
 $('#openingBalance').addEventListener('change',async e=>{yearOpeningBalance=Number(e.target.value)||0;renderAll();await saveYearSettings()});
@@ -1696,6 +1856,19 @@ const scroller=$('#annualScroll');let dragging=false,startX=0,startLeft=0;
 scroller.addEventListener('pointerdown',e=>{if(e.target.closest('input,button,select,a')||e.target.closest('.entry-cell')||e.target.closest('.date-click'))return;dragging=true;startX=e.clientX;startLeft=scroller.scrollLeft;scroller.classList.add('dragging');scroller.setPointerCapture(e.pointerId)});
 scroller.addEventListener('pointermove',e=>{if(dragging)scroller.scrollLeft=startLeft-(e.clientX-startX)});function stopDrag(){dragging=false;scroller.classList.remove('dragging')}scroller.addEventListener('pointerup',stopDrag);scroller.addEventListener('pointercancel',stopDrag);
 function scrollToMonth(month,smooth=true){const head=$(`.month-head th[data-month="${month}"]`);if(head)scroller.scrollTo({left:head.offsetLeft-16,behavior:smooth?'smooth':'auto'});$('#scrollPosition').textContent=`${MONTHS[month]} em foco`}
+
+document.querySelectorAll('[data-finance-scope]').forEach(button=>button.addEventListener('click',async()=>{
+  const nextScope=button.dataset.financeScope;
+  if(nextScope===financeScope)return;
+
+  financeScope=nextScope;
+  localStorage.setItem('finance_scope',financeScope);
+  testDraft=null;
+  selectedBudgetCategory=null;
+  applyScopeUI();
+  await loadYear(currentYear,false);
+  scrollToMonth(selectedMonth,false)
+}));
 
 async function loadYear(year,scroll=true){
   showError('');
@@ -1721,6 +1894,7 @@ async function loadYear(year,scroll=true){
   }catch(e){showError(e.message)}
 }
 
+applyScopeUI();
 loadYear(currentYear,true);
 </script>
 </body>

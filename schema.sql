@@ -347,3 +347,108 @@ UPDATE ld4_finance_reserve_accounts
        updated_at = NOW()
  WHERE system_key IN ('emergency', 'treasury-2029', 'treasury-2032');
 
+-- v6.0 · separação PF / PJ
+ALTER TABLE ld4_finance_categories
+  ADD COLUMN IF NOT EXISTS owner_scope TEXT NOT NULL DEFAULT 'pf'
+  CHECK (owner_scope IN ('pf', 'pj'));
+
+ALTER TABLE ld4_finance_transactions
+  ADD COLUMN IF NOT EXISTS owner_scope TEXT NOT NULL DEFAULT 'pf'
+  CHECK (owner_scope IN ('pf', 'pj'));
+
+ALTER TABLE ld4_finance_budgets
+  ADD COLUMN IF NOT EXISTS owner_scope TEXT NOT NULL DEFAULT 'pf'
+  CHECK (owner_scope IN ('pf', 'pj'));
+
+ALTER TABLE ld4_finance_years
+  ADD COLUMN IF NOT EXISTS owner_scope TEXT NOT NULL DEFAULT 'pf'
+  CHECK (owner_scope IN ('pf', 'pj'));
+
+ALTER TABLE ld4_finance_reserve_accounts
+  ADD COLUMN IF NOT EXISTS owner_scope TEXT NOT NULL DEFAULT 'pf'
+  CHECK (owner_scope IN ('pf', 'pj'));
+
+ALTER TABLE ld4_finance_recurring_rules
+  ADD COLUMN IF NOT EXISTS owner_scope TEXT NOT NULL DEFAULT 'pf'
+  CHECK (owner_scope IN ('pf', 'pj'));
+
+-- Os registros existentes pertencem à PF.
+UPDATE ld4_finance_categories SET owner_scope = 'pf' WHERE owner_scope IS NULL;
+UPDATE ld4_finance_transactions SET owner_scope = 'pf' WHERE owner_scope IS NULL;
+UPDATE ld4_finance_budgets SET owner_scope = 'pf' WHERE owner_scope IS NULL;
+UPDATE ld4_finance_years SET owner_scope = 'pf' WHERE owner_scope IS NULL;
+UPDATE ld4_finance_reserve_accounts SET owner_scope = 'pf' WHERE owner_scope IS NULL;
+UPDATE ld4_finance_recurring_rules SET owner_scope = 'pf' WHERE owner_scope IS NULL;
+
+-- Categoria pode ter o mesmo nome na PF e na PJ.
+ALTER TABLE ld4_finance_categories
+  DROP CONSTRAINT IF EXISTS ld4_finance_categories_name_key;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ld4_finance_categories_scope_name_idx
+  ON ld4_finance_categories(owner_scope, LOWER(name));
+
+CREATE INDEX IF NOT EXISTS ld4_finance_transactions_scope_date_idx
+  ON ld4_finance_transactions(owner_scope, transaction_date);
+
+CREATE INDEX IF NOT EXISTS ld4_finance_categories_scope_idx
+  ON ld4_finance_categories(owner_scope, active, sort_order);
+
+CREATE INDEX IF NOT EXISTS ld4_finance_reserve_accounts_scope_idx
+  ON ld4_finance_reserve_accounts(owner_scope, active, sort_order);
+
+CREATE INDEX IF NOT EXISTS ld4_finance_recurring_rules_scope_idx
+  ON ld4_finance_recurring_rules(owner_scope, active);
+
+-- Orçamento e saldo inicial passam a ser independentes por PF/PJ.
+ALTER TABLE ld4_finance_budgets
+  DROP CONSTRAINT IF EXISTS ld4_finance_budgets_pkey;
+
+ALTER TABLE ld4_finance_budgets
+  ADD CONSTRAINT ld4_finance_budgets_pkey
+  PRIMARY KEY (owner_scope, year, month, category_id);
+
+ALTER TABLE ld4_finance_years
+  DROP CONSTRAINT IF EXISTS ld4_finance_years_pkey;
+
+ALTER TABLE ld4_finance_years
+  ADD CONSTRAINT ld4_finance_years_pkey
+  PRIMARY KEY (owner_scope, year);
+
+-- Categorias iniciais da PJ.
+INSERT INTO ld4_finance_categories
+  (id, name, sort_order, active, owner_scope, created_at, updated_at)
+VALUES
+  ('pj-contabilidade', 'Contabilidade', 10, TRUE, 'pj', NOW(), NOW()),
+  ('pj-softwares', 'Softwares', 20, TRUE, 'pj', NOW(), NOW()),
+  ('pj-marketing', 'Marketing', 30, TRUE, 'pj', NOW(), NOW()),
+  ('pj-estrutura', 'Estrutura', 40, TRUE, 'pj', NOW(), NOW()),
+  ('pj-impostos-taxas', 'Impostos e taxas', 50, TRUE, 'pj', NOW(), NOW()),
+  ('pj-pro-labore', 'Pró-labore', 60, TRUE, 'pj', NOW(), NOW()),
+  ('pj-outros', 'Outros', 70, TRUE, 'pj', NOW(), NOW())
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  sort_order = EXCLUDED.sort_order,
+  active = TRUE,
+  owner_scope = 'pj',
+  updated_at = NOW();
+
+-- Destinos fixos da PJ.
+INSERT INTO ld4_finance_reserve_accounts
+  (id, name, opening_balance, sort_order, active, system_key, asset_type, maturity_date, default_rate, owner_scope, created_at, updated_at)
+VALUES
+  ('pj-tax-reserve', 'Reserva para impostos', 0, 10, TRUE, 'pj-tax', 'cash', NULL, NULL, 'pj', NOW(), NOW()),
+  ('pj-operating-reserve', 'Reserva operacional', 0, 20, TRUE, 'pj-operating', 'cash', NULL, NULL, 'pj', NOW(), NOW())
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  active = TRUE,
+  system_key = EXCLUDED.system_key,
+  asset_type = 'cash',
+  owner_scope = 'pj',
+  updated_at = NOW();
+
+-- Garante que os três destinos da PF continuem no escopo pessoal.
+UPDATE ld4_finance_reserve_accounts
+   SET owner_scope = 'pf',
+       updated_at = NOW()
+ WHERE system_key IN ('emergency', 'treasury-2029', 'treasury-2032');
+

@@ -422,6 +422,261 @@ async function generatePdf(res, day) {
   doc.end();
 }
 
+
+function financeNumberOrNull(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function financeIsoDate(value) {
+  if (!value) return null;
+  return String(value).slice(0, 10);
+}
+
+function financeEasterSunday(year) {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function financeAddUtcDays(date, days) {
+  const copy = new Date(date.getTime());
+  copy.setUTCDate(copy.getUTCDate() + days);
+  return copy;
+}
+
+function financeMarketHolidayKeys(year) {
+  const keys = new Set();
+  const fixed = [
+    [1, 1], [4, 21], [5, 1], [9, 7], [10, 12],
+    [11, 2], [11, 15], [11, 20], [12, 25]
+  ];
+
+  fixed.forEach(([month, day]) => {
+    keys.add(`${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`);
+  });
+
+  const easter = financeEasterSunday(year);
+  [
+    financeAddUtcDays(easter, -48),
+    financeAddUtcDays(easter, -47),
+    financeAddUtcDays(easter, -2),
+    financeAddUtcDays(easter, 60)
+  ].forEach(date => {
+    keys.add([
+      date.getUTCFullYear(),
+      String(date.getUTCMonth() + 1).padStart(2, "0"),
+      String(date.getUTCDate()).padStart(2, "0")
+    ].join("-"));
+  });
+
+  return keys;
+}
+
+function financeBusinessDays252(startText, endText) {
+  const start = new Date(`${startText}T00:00:00Z`);
+  const end = new Date(`${endText}T00:00:00Z`);
+
+  if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || start >= end) {
+    return 0;
+  }
+
+  let current = new Date(start.getTime());
+  let count = 0;
+  const holidayCache = new Map();
+
+  while (current < end) {
+    const weekday = current.getUTCDay();
+    const year = current.getUTCFullYear();
+
+    if (!holidayCache.has(year)) {
+      holidayCache.set(year, financeMarketHolidayKeys(year));
+    }
+
+    const key = [
+      year,
+      String(current.getUTCMonth() + 1).padStart(2, "0"),
+      String(current.getUTCDate()).padStart(2, "0")
+    ].join("-");
+
+    if (weekday !== 0 && weekday !== 6 && !holidayCache.get(year).has(key)) {
+      count += 1;
+    }
+
+    current.setUTCDate(current.getUTCDate() + 1);
+  }
+
+  return count;
+}
+
+function financeProjectedTreasuryValue(amount, rate, purchaseDate, maturityDate) {
+  const principal = Number(amount);
+  const annualRate = Number(rate);
+
+  if (
+    !Number.isFinite(principal) ||
+    principal <= 0 ||
+    !Number.isFinite(annualRate) ||
+    annualRate <= -100 ||
+    !purchaseDate ||
+    !maturityDate
+  ) {
+    return principal || 0;
+  }
+
+  const businessDays = financeBusinessDays252(purchaseDate, maturityDate);
+  return principal * Math.pow(1 + annualRate / 100, businessDays / 252);
+}
+
+async function financeInvestmentSnapshot(year) {
+  const yearEnd = `${year + 1}-01-01`;
+
+  const [accountsResult, transfersResult, valuationsResult] = await Promise.all([
+    pool.query(
+      `SELECT
+         id, name, opening_balance, sort_order, active,
+         system_key, asset_type,
+         TO_CHAR(maturity_date, 'YYYY-MM-DD') AS maturity_date,
+         default_rate
+       FROM ld4_finance_reserve_accounts
+       WHERE active = TRUE
+       ORDER BY sort_order, name`
+    ),
+    pool.query(
+      `SELECT
+         id,
+         TO_CHAR(transfer_date, 'YYYY-MM-DD') AS transfer_date,
+         account_id, direction, amount, status, description,
+         contracted_rate,
+         TO_CHAR(maturity_date, 'YYYY-MM-DD') AS maturity_date
+       FROM ld4_finance_reserve_transfers
+       WHERE transfer_date < $1::date
+       ORDER BY transfer_date, created_at`,
+      [yearEnd]
+    ),
+    pool.query(
+      `SELECT
+         id, account_id,
+         TO_CHAR(valuation_date, 'YYYY-MM-DD') AS valuation_date,
+         current_value
+       FROM ld4_finance_investment_valuations
+       WHERE valuation_date < $1::date
+       ORDER BY valuation_date, created_at`,
+      [yearEnd]
+    )
+  ]);
+
+  return accountsResult.rows.map(row => {
+    const openingBalance = Number(row.opening_balance || 0);
+
+    const transfers = transfersResult.rows
+      .filter(item => item.account_id === row.id)
+      .map(item => ({
+        id: item.id,
+        date: financeIsoDate(item.transfer_date),
+        direction: item.direction,
+        amount: Number(item.amount || 0),
+        status: item.status,
+        description: item.description || "",
+        contractedRate: financeNumberOrNull(item.contracted_rate),
+        maturityDate: financeIsoDate(item.maturity_date || row.maturity_date)
+      }));
+
+    const realized = transfers.filter(item => item.status === "realized");
+    const realizedTo = realized
+      .filter(item => item.direction === "to_reserve")
+      .reduce((sum, item) => sum + item.amount, 0);
+    const realizedFrom = realized
+      .filter(item => item.direction === "from_reserve")
+      .reduce((sum, item) => sum + item.amount, 0);
+
+    const contributed = openingBalance + realizedTo - realizedFrom;
+
+    const valuations = valuationsResult.rows
+      .filter(item => item.account_id === row.id)
+      .map(item => ({
+        id: item.id,
+        date: financeIsoDate(item.valuation_date),
+        currentValue: Number(item.current_value || 0)
+      }));
+
+    const latestValuation = valuations.length ? valuations[valuations.length - 1] : null;
+    let currentValue = contributed;
+
+    if (latestValuation) {
+      const laterNet = realized
+        .filter(item => item.date > latestValuation.date)
+        .reduce(
+          (sum, item) => sum + (item.direction === "to_reserve" ? item.amount : -item.amount),
+          0
+        );
+
+      currentValue = latestValuation.currentValue + laterNet;
+    }
+
+    const lots = realized
+      .filter(item => item.direction === "to_reserve")
+      .map(item => {
+        const rate = item.contractedRate ?? financeNumberOrNull(row.default_rate);
+        const maturityDate = item.maturityDate || financeIsoDate(row.maturity_date);
+        const projectedMaturityValue = row.asset_type === "treasury_fixed"
+          ? financeProjectedTreasuryValue(item.amount, rate, item.date, maturityDate)
+          : item.amount;
+
+        return {
+          ...item,
+          rate,
+          maturityDate,
+          projectedMaturityValue
+        };
+      });
+
+    let projectedMaturityValue = contributed;
+
+    if (row.asset_type === "treasury_fixed") {
+      projectedMaturityValue =
+        openingBalance +
+        lots.reduce((sum, lot) => sum + lot.projectedMaturityValue, 0) -
+        realizedFrom;
+    }
+
+    const denominator = lots.reduce((sum, lot) => sum + lot.amount, 0);
+    const weightedRate = denominator
+      ? lots.reduce((sum, lot) => sum + lot.amount * Number(lot.rate || 0), 0) / denominator
+      : financeNumberOrNull(row.default_rate);
+
+    return {
+      id: row.id,
+      name: row.name,
+      sortOrder: Number(row.sort_order || 0),
+      systemKey: row.system_key || null,
+      assetType: row.asset_type || "cash",
+      maturityDate: financeIsoDate(row.maturity_date),
+      defaultRate: financeNumberOrNull(row.default_rate),
+      weightedRate,
+      openingBalance,
+      contributed,
+      currentValue,
+      projectedMaturityValue,
+      lots,
+      valuations
+    };
+  });
+}
+
 async function handleApi(req, res, url) {
   if (req.method === "GET" && url.pathname === "/api/enam/meta") {
     sendJson(res, 200, {
@@ -473,6 +728,58 @@ async function handleApi(req, res, url) {
   }
 
   if (req.method === "POST" && url.pathname === "/api/enam/login") {
+    sendJson(res, 200, { ok: true });
+    return true;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/finance/investments") {
+    const year = Number(url.searchParams.get("year"));
+
+    if (!validFinanceYear(year)) {
+      sendJson(res, 400, { error: "Ano inválido." });
+      return true;
+    }
+
+    const accounts = await financeInvestmentSnapshot(year);
+    sendJson(res, 200, { year, accounts });
+    return true;
+  }
+
+  const valuationMatch = url.pathname.match(/^\/api\/finance\/reserve-accounts\/([^/]+)\/valuation$/);
+
+  if (req.method === "PUT" && valuationMatch) {
+    const accountId = decodeURIComponent(valuationMatch[1]);
+    const body = await readJson(req);
+    const currentValue = Number(body.currentValue);
+    const valuationDate = String(body.valuationDate || "");
+
+    if (!Number.isFinite(currentValue) || currentValue < 0 || !/^\d{4}-\d{2}-\d{2}$/.test(valuationDate)) {
+      sendJson(res, 400, { error: "Posição atual inválida." });
+      return true;
+    }
+
+    const accountResult = await pool.query(
+      `SELECT id
+       FROM ld4_finance_reserve_accounts
+       WHERE id = $1 AND active = TRUE
+       LIMIT 1`,
+      [accountId]
+    );
+
+    if (!accountResult.rows.length) {
+      sendJson(res, 404, { error: "Destino não encontrado." });
+      return true;
+    }
+
+    await pool.query(
+      `INSERT INTO ld4_finance_investment_valuations
+        (id, account_id, valuation_date, current_value)
+       VALUES ($1, $2, $3::date, $4)
+       ON CONFLICT (account_id, valuation_date)
+       DO UPDATE SET current_value = EXCLUDED.current_value`,
+      [randomUUID(), accountId, valuationDate, currentValue]
+    );
+
     sendJson(res, 200, { ok: true });
     return true;
   }
@@ -533,6 +840,10 @@ async function handleApi(req, res, url) {
            a.name,
            a.opening_balance,
            a.sort_order,
+           a.system_key,
+           a.asset_type,
+           TO_CHAR(a.maturity_date, 'YYYY-MM-DD') AS maturity_date,
+           a.default_rate,
            a.opening_balance
              + COALESCE(SUM(
                  CASE
@@ -554,7 +865,7 @@ async function handleApi(req, res, url) {
          LEFT JOIN ld4_finance_reserve_transfers t
            ON t.account_id = a.id
         WHERE a.active = TRUE
-        GROUP BY a.id, a.name, a.opening_balance, a.sort_order
+        GROUP BY a.id, a.name, a.opening_balance, a.sort_order, a.system_key, a.asset_type, a.maturity_date, a.default_rate
         ORDER BY a.sort_order ASC, a.name ASC`,
         [start]
       ),
@@ -566,7 +877,9 @@ async function handleApi(req, res, url) {
            t.direction,
            t.amount,
            t.status,
-           t.description
+           t.description,
+           t.contracted_rate,
+           TO_CHAR(t.maturity_date, 'YYYY-MM-DD') AS maturity_date
          FROM ld4_finance_reserve_transfers t
         WHERE t.transfer_date >= $1::date
           AND t.transfer_date < $2::date
@@ -631,7 +944,11 @@ async function handleApi(req, res, url) {
         openingBalance: Number(row.opening_balance || 0),
         openingReal: Number(row.opening_real || 0),
         openingProjected: Number(row.opening_projected || 0),
-        sortOrder: Number(row.sort_order || 0)
+        sortOrder: Number(row.sort_order || 0),
+        systemKey: row.system_key || null,
+        assetType: row.asset_type || "cash",
+        maturityDate: financeIsoDate(row.maturity_date),
+        defaultRate: financeNumberOrNull(row.default_rate)
       })),
       reserveTransfers: reserveTransfersResult.rows.map(row => {
         const date = String(row.transfer_date).slice(0, 10);
@@ -646,7 +963,9 @@ async function handleApi(req, res, url) {
           direction: row.direction,
           value: Number(row.amount || 0),
           status: row.status,
-          description: row.description || ""
+          description: row.description || "",
+          contractedRate: financeNumberOrNull(row.contracted_rate),
+          maturityDate: financeIsoDate(row.maturity_date)
         };
       }),
       recurringRules: recurringRulesResult.rows.map(row => ({
@@ -910,6 +1229,8 @@ async function handleApi(req, res, url) {
     const amount = Number(body.value);
     const status = String(body.status || "");
     const description = cleanFinanceDescription(body.description);
+    const contractedRate = financeNumberOrNull(body.contractedRate);
+    const maturityDate = body.maturityDate ? String(body.maturityDate) : null;
 
     if (
       !validFinanceDate(year, month, day) ||
@@ -924,11 +1245,10 @@ async function handleApi(req, res, url) {
     }
 
     const accountExists = await pool.query(
-      `SELECT id
-         FROM ld4_finance_reserve_accounts
-        WHERE id = $1
-          AND active = TRUE
-        LIMIT 1`,
+      `SELECT id, asset_type, maturity_date, default_rate
+       FROM ld4_finance_reserve_accounts
+       WHERE id = $1 AND active = TRUE
+       LIMIT 1`,
       [account]
     );
 
@@ -937,12 +1257,30 @@ async function handleApi(req, res, url) {
       return true;
     }
 
+    const accountRow = accountExists.rows[0];
+    const finalRate = accountRow.asset_type === "treasury_fixed" && direction === "to_reserve"
+      ? (contractedRate ?? financeNumberOrNull(accountRow.default_rate))
+      : null;
+    const finalMaturity = accountRow.asset_type === "treasury_fixed"
+      ? (maturityDate || financeIsoDate(accountRow.maturity_date))
+      : null;
+
     const result = await pool.query(
       `INSERT INTO ld4_finance_reserve_transfers
-        (id, transfer_date, account_id, direction, amount, status, description)
-       VALUES ($1, $2::date, $3, $4, $5, $6, $7)
+        (id, transfer_date, account_id, direction, amount, status, description, contracted_rate, maturity_date)
+       VALUES ($1, $2::date, $3, $4, $5, $6, $7, $8, $9::date)
        RETURNING id`,
-      [randomUUID(), financeDateKey(year, month, day), account, direction, amount, status, description]
+      [
+        randomUUID(),
+        financeDateKey(year, month, day),
+        account,
+        direction,
+        amount,
+        status,
+        description,
+        finalRate,
+        finalMaturity
+      ]
     );
 
     sendJson(res, 201, { id: result.rows[0].id });
@@ -962,6 +1300,8 @@ async function handleApi(req, res, url) {
     const amount = Number(body.value);
     const status = String(body.status || "");
     const description = cleanFinanceDescription(body.description);
+    const contractedRate = financeNumberOrNull(body.contractedRate);
+    const maturityDate = body.maturityDate ? String(body.maturityDate) : null;
 
     if (
       !validFinanceDate(year, month, day) ||
@@ -975,6 +1315,27 @@ async function handleApi(req, res, url) {
       return true;
     }
 
+    const accountResult = await pool.query(
+      `SELECT asset_type, maturity_date, default_rate
+       FROM ld4_finance_reserve_accounts
+       WHERE id = $1 AND active = TRUE
+       LIMIT 1`,
+      [account]
+    );
+
+    if (!accountResult.rows.length) {
+      sendJson(res, 404, { error: "Reserva não encontrada." });
+      return true;
+    }
+
+    const accountRow = accountResult.rows[0];
+    const finalRate = accountRow.asset_type === "treasury_fixed" && direction === "to_reserve"
+      ? (contractedRate ?? financeNumberOrNull(accountRow.default_rate))
+      : null;
+    const finalMaturity = accountRow.asset_type === "treasury_fixed"
+      ? (maturityDate || financeIsoDate(accountRow.maturity_date))
+      : null;
+
     const result = await pool.query(
       `UPDATE ld4_finance_reserve_transfers
           SET transfer_date = $2::date,
@@ -983,10 +1344,22 @@ async function handleApi(req, res, url) {
               amount = $5,
               status = $6,
               description = $7,
+              contracted_rate = $8,
+              maturity_date = $9::date,
               updated_at = NOW()
         WHERE id = $1
         RETURNING id`,
-      [id, financeDateKey(year, month, day), account, direction, amount, status, description]
+      [
+        id,
+        financeDateKey(year, month, day),
+        account,
+        direction,
+        amount,
+        status,
+        description,
+        finalRate,
+        finalMaturity
+      ]
     );
 
     if (!result.rows.length) {

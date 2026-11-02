@@ -174,3 +174,121 @@ CREATE TABLE IF NOT EXISTS ld4_finance_recurring_skips (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (recurring_rule_id, skipped_date)
 );
+
+-- v5.1 · destinos e lotes de investimentos
+ALTER TABLE ld4_finance_reserve_accounts
+  ADD COLUMN IF NOT EXISTS system_key TEXT;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ld4_finance_reserve_accounts_system_key_idx
+  ON ld4_finance_reserve_accounts(system_key)
+  WHERE system_key IS NOT NULL;
+
+ALTER TABLE ld4_finance_reserve_accounts
+  ADD COLUMN IF NOT EXISTS asset_type TEXT NOT NULL DEFAULT 'cash'
+  CHECK (asset_type IN ('cash', 'treasury_fixed'));
+
+ALTER TABLE ld4_finance_reserve_accounts
+  ADD COLUMN IF NOT EXISTS maturity_date DATE;
+
+ALTER TABLE ld4_finance_reserve_accounts
+  ADD COLUMN IF NOT EXISTS default_rate NUMERIC(8,4);
+
+ALTER TABLE ld4_finance_reserve_transfers
+  ADD COLUMN IF NOT EXISTS contracted_rate NUMERIC(8,4);
+
+ALTER TABLE ld4_finance_reserve_transfers
+  ADD COLUMN IF NOT EXISTS maturity_date DATE;
+
+CREATE TABLE IF NOT EXISTS ld4_finance_investment_valuations (
+  id TEXT PRIMARY KEY,
+  account_id TEXT NOT NULL REFERENCES ld4_finance_reserve_accounts(id) ON DELETE CASCADE,
+  valuation_date DATE NOT NULL,
+  current_value NUMERIC(14,2) NOT NULL CHECK (current_value >= 0),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(account_id, valuation_date)
+);
+
+CREATE INDEX IF NOT EXISTS ld4_finance_investment_valuations_account_date_idx
+  ON ld4_finance_investment_valuations(account_id, valuation_date DESC);
+
+UPDATE ld4_finance_reserve_accounts
+   SET system_key = 'emergency',
+       asset_type = 'cash',
+       maturity_date = NULL,
+       default_rate = NULL,
+       updated_at = NOW()
+ WHERE LOWER(name) = LOWER('Reserva de emergência')
+   AND (system_key IS NULL OR system_key = 'emergency');
+
+UPDATE ld4_finance_reserve_accounts
+   SET system_key = 'treasury-2029',
+       asset_type = 'treasury_fixed',
+       maturity_date = DATE '2029-01-01',
+       default_rate = 14.95,
+       updated_at = NOW()
+ WHERE LOWER(name) = LOWER('Tesouro Prefixado 2029')
+   AND (system_key IS NULL OR system_key = 'treasury-2029');
+
+UPDATE ld4_finance_reserve_accounts
+   SET system_key = 'treasury-2032',
+       asset_type = 'treasury_fixed',
+       maturity_date = DATE '2032-01-01',
+       default_rate = 15.48,
+       updated_at = NOW()
+ WHERE LOWER(name) = LOWER('Tesouro Prefixado 2032')
+   AND (system_key IS NULL OR system_key = 'treasury-2032');
+
+INSERT INTO ld4_finance_reserve_accounts
+  (id, name, opening_balance, sort_order, active, system_key, asset_type, maturity_date, default_rate, created_at, updated_at)
+SELECT
+  'reserve-emergency',
+  'Reserva de emergência',
+  0,
+  10,
+  TRUE,
+  'emergency',
+  'cash',
+  NULL,
+  NULL,
+  NOW(),
+  NOW()
+WHERE NOT EXISTS (
+  SELECT 1 FROM ld4_finance_reserve_accounts WHERE system_key = 'emergency'
+);
+
+INSERT INTO ld4_finance_reserve_accounts
+  (id, name, opening_balance, sort_order, active, system_key, asset_type, maturity_date, default_rate, created_at, updated_at)
+SELECT
+  'treasury-fixed-2029',
+  'Tesouro Prefixado 2029',
+  0,
+  20,
+  TRUE,
+  'treasury-2029',
+  'treasury_fixed',
+  DATE '2029-01-01',
+  14.95,
+  NOW(),
+  NOW()
+WHERE NOT EXISTS (
+  SELECT 1 FROM ld4_finance_reserve_accounts WHERE system_key = 'treasury-2029'
+);
+
+INSERT INTO ld4_finance_reserve_accounts
+  (id, name, opening_balance, sort_order, active, system_key, asset_type, maturity_date, default_rate, created_at, updated_at)
+SELECT
+  'treasury-fixed-2032',
+  'Tesouro Prefixado 2032',
+  0,
+  30,
+  TRUE,
+  'treasury-2032',
+  'treasury_fixed',
+  DATE '2032-01-01',
+  15.48,
+  NOW(),
+  NOW()
+WHERE NOT EXISTS (
+  SELECT 1 FROM ld4_finance_reserve_accounts WHERE system_key = 'treasury-2032'
+);
+

@@ -208,6 +208,29 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
 
 @media(max-width:1000px){.metrics{grid-template-columns:repeat(2,1fr)}.metric:nth-child(3),.metric:nth-child(5){border-left:0}.after-sheet{grid-template-columns:1fr}}
 @media(max-width:650px){.shell{width:calc(100% - 24px);padding-top:26px}.topbar,.headline{align-items:flex-start;flex-direction:column}.metrics{grid-template-columns:1fr}.metric+.metric{border-left:0;border-top:1px solid #111;padding-left:0}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}}
+
+.investment-head{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:14px}
+.investment-head h2{margin:0;color:var(--strong);font-size:18px;letter-spacing:-.025em}
+.investment-head p{margin:5px 0 0;color:var(--muted2);font-size:10px}
+.investment-head-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.portfolio-strip{display:grid;grid-template-columns:1.1fr repeat(3,.7fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:15px}
+.port-stat{padding:11px 14px 11px 0}.port-stat+.port-stat{border-left:1px solid var(--line);padding-left:14px}
+.port-stat span{display:block;color:var(--muted2);font-size:8px;text-transform:uppercase;letter-spacing:.08em}.port-stat b{display:block;margin-top:4px;color:#aaa;font-size:14px}
+.investment-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.investment-card{border:1px solid var(--line);border-radius:8px;background:#070707;padding:14px}
+.investment-card-head{display:flex;align-items:start;justify-content:space-between;gap:12px}
+.investment-name{color:#aaa;font-size:11px;font-weight:800}.investment-type{margin-top:2px;color:#444;font-size:8px}
+.investment-pill{font-size:7px;color:#667d8d;border:1px solid #25343e;border-radius:999px;padding:2px 6px}.investment-pill.lock{color:#a48e62;border-color:#433b2b}
+.investment-value{margin-top:12px;color:#c7c7c7;font-size:19px;letter-spacing:-.03em}.investment-value-label{margin-top:2px;color:#444;font-size:7px;text-transform:uppercase;letter-spacing:.08em}
+.investment-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.investment-meta div{border-top:1px solid #151515;padding-top:7px}.investment-meta span{display:block;color:#444;font-size:7px;text-transform:uppercase;letter-spacing:.08em}.investment-meta b{display:block;margin-top:2px;color:#808080;font-size:10px}
+.contract-box{margin-top:10px;border:1px solid #1b1b1b;border-radius:6px;background:#050505;padding:8px 9px}.contract-line{display:flex;justify-content:space-between;gap:12px;font-size:8px;padding:2px 0}.contract-line span{color:#4c4c4c}.contract-line b{color:#8d8d8d}
+.investment-bars{height:42px;display:flex;align-items:end;gap:3px;margin-top:12px}.investment-bars i{display:block;flex:1;min-width:2px;background:#22313a;border-radius:1px 1px 0 0}.investment-chart-note{color:#3f3f3f;font-size:7px;margin-top:3px}
+.investment-actions{display:flex;justify-content:space-between;margin-top:10px}.investment-link{border:0;background:transparent;color:#4d4d4d;padding:0;font-size:8px}.investment-link:hover{color:#999}
+.investment-notice{margin-top:12px;padding:9px 10px;border-left:2px solid #4a3c29;background:#090806;color:#6d6250;font-size:8px;line-height:1.5}
+.investment-detail-row{display:flex;justify-content:space-between;gap:18px;padding:10px 0;border-bottom:1px solid #111}.investment-detail-row b{display:block;color:#8e8e8e;font-size:10px}.investment-detail-row span{display:block;margin-top:2px;color:#454545;font-size:8px}
+.investment-lot{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid #111}.investment-lot strong{display:block;color:#8f8f8f;font-size:9px}.investment-lot small{display:block;color:#444;font-size:7px}.investment-lot b{color:#8d8d8d;font-size:9px}
+@media(max-width:900px){.investment-grid{grid-template-columns:1fr}.portfolio-strip{grid-template-columns:1fr 1fr}}
+
 </style>
 </head>
 <body>
@@ -317,25 +340,33 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
 </div>
 
 <section class="reserve-grid">
-  <div class="section-title">
-    <div class="kicker">Patrimônio separado do dinheiro de gastar</div>
-    <div class="reserve-title-line">
-      <h2>Reservas e investimentos</h2>
-      <button
-        class="category-manager-button"
-        id="reserveManagerButton"
-        type="button"
-        title="Gerenciar reservas"
-        aria-label="Gerenciar reservas e investimentos"
-      >···</button>
+  <div class="investment-head">
+    <div>
+      <div class="kicker">Patrimônio separado do dinheiro de gastar</div>
+      <div class="reserve-title-line">
+        <h2>Reservas e investimentos</h2>
+      </div>
+      <p>Guardar reduz o saldo disponível sem virar despesa. Nos Prefixados, a posição atual fica separada do valor contratado no vencimento.</p>
     </div>
-    <p>Guardar reduz o saldo disponível, mas não conta como despesa. Resgatar faz o caminho contrário.</p>
-    <div class="reserve-actions">
-      <button class="btn" id="reserveDepositButton" type="button">↗ Guardar dinheiro</button>
+    <div class="investment-head-actions">
       <button class="btn" id="reserveWithdrawButton" type="button">↙ Resgatar</button>
+      <button class="btn" id="investmentUpdateValues" type="button">Atualizar posição</button>
+      <button class="btn primary" id="reserveDepositButton" type="button">↗ Guardar dinheiro</button>
     </div>
   </div>
-  <div class="reserve-list" id="reserveList"></div>
+
+  <div class="portfolio-strip">
+    <div class="port-stat"><span>Posição atual total</span><b id="portfolioCurrent">—</b></div>
+    <div class="port-stat"><span>Total aportado</span><b id="portfolioContributed">—</b></div>
+    <div class="port-stat"><span>Projetado bruto no vencimento</span><b class="good" id="portfolioMaturity">—</b></div>
+    <div class="port-stat"><span>Ganho contratado futuro*</span><b class="good" id="portfolioFutureGain">—</b></div>
+  </div>
+
+  <div class="investment-grid" id="reserveList"></div>
+
+  <div class="investment-notice">
+    *No Tesouro Prefixado, a taxa é contratada em cada compra. Se você carregar o título até o vencimento, a projeção segue aquela taxa. Antes disso, a posição pode subir ou cair por marcação a mercado; uma venda antecipada pode gerar retorno maior ou menor que o contratado.
+  </div>
 </section>
 </main>
 
@@ -371,12 +402,13 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
     <div class="field"><label>Mês</label><select id="rMonth"></select></div>
     <div class="field"><label>Dia</label><input id="rDay" type="number" min="1" max="31" required></div>
     <div class="field"><label>Valor</label><input id="rValue" type="number" step="0.01" min="0" required></div>
-    <div class="field"><label>Reserva</label><select id="rAccount"></select></div>
+    <div class="field"><label>Destino</label><select id="rAccount"></select></div>
     <div class="field"><label>Movimento</label><select id="rDirection"><option value="to_reserve">Guardar</option><option value="from_reserve">Resgatar</option></select></div>
     <div class="field"><label>Situação</label><select id="rStatus"><option value="realized">Realizado</option><option value="provisioned">Provisionado</option></select></div>
-    <div class="field full"><label>Descrição</label><input id="rDescription" type="text" placeholder="Ex.: aporte mensal, reserva da viagem..."></div>
+    <div class="field" id="rRateField" style="display:none"><label>Taxa contratada (% a.a.)</label><input id="rRate" type="number" min="0" step="0.01"></div>
+    <div class="field full"><label>Descrição</label><input id="rDescription" type="text" placeholder="Ex.: aporte mensal"></div>
   </div>
-  <div class="helper">Guardar reduz o saldo disponível e aumenta a reserva pelo mesmo valor. Não entra nas despesas do mês.</div>
+  <div class="helper" id="reserveTransferHelper">Guardar reduz o saldo disponível e aumenta a reserva pelo mesmo valor. Não entra nas despesas do mês.</div>
   <div class="modal-actions"><button class="btn" type="button" id="cancelReserveTransfer">Cancelar</button><button class="btn primary" type="submit">Salvar</button></div>
 </form>
 </div>
@@ -398,6 +430,31 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
   </section>
 </div>
 
+
+
+<div class="modal-backdrop" id="investmentUpdateBackdrop">
+  <form class="modal" id="investmentUpdateForm">
+    <div class="modal-head">
+      <div><div class="kicker">Marcação a mercado / saldo atual</div><h3>Atualizar posição atual</h3></div>
+      <button class="close" type="button" id="closeInvestmentUpdate">×</button>
+    </div>
+    <div class="form-grid" id="investmentUpdateFields"></div>
+    <div class="helper">Informe o valor que aparece hoje no banco ou corretora. Nos Prefixados, ele pode ficar acima ou abaixo do valor aportado antes do vencimento.</div>
+    <div class="modal-actions"><button class="btn" type="button" id="cancelInvestmentUpdate">Cancelar</button><button class="btn primary" type="submit">Salvar</button></div>
+  </form>
+</div>
+
+<div class="modal-backdrop" id="investmentDetailBackdrop">
+  <section class="modal">
+    <div class="modal-head">
+      <div><div class="kicker">Evolução e lotes</div><h3 id="investmentDetailTitle"></h3></div>
+      <button class="close" type="button" id="closeInvestmentDetail">×</button>
+    </div>
+    <div id="investmentDetailSummary"></div>
+    <div id="investmentDetailLots"></div>
+    <div class="helper" id="investmentDetailHelper"></div>
+  </section>
+</div>
 
 <div class="modal-backdrop" id="budgetDetailBackdrop">
   <section class="modal" aria-labelledby="budgetDetailTitle">
@@ -500,6 +557,7 @@ let transactions=[];
 let categories=[];
 let budgets=[];
 let reserveAccounts=[];
+let investmentAccounts=[];
 let reserveTransfers=[];
 let recurringRules=[];
 let selectedBudgetCategory=null;
@@ -708,10 +766,13 @@ function renderSelectedMonth(){
   $('#mReal').textContent=BRL.format(t.endReal);
   $('#mProjected').textContent=BRL.format(t.endProjected);
   $('#mProjected').className=t.endProjected<0?'bad':t.endProjected<warningThreshold?'warn':'';
-  $('#mReserves').textContent=BRL.format(t.reserveEndReal);
-  $('#mReservesSub').textContent=t.reserveEndProjected!==t.reserveEndReal?`${BRL.format(t.reserveEndProjected)} projetados`:'valor guardado';
-  $('#mNetWorth').textContent=BRL.format(t.netWorthReal);
-  $('#mNetWorthSub').textContent=t.netWorthProjected!==t.netWorthReal?`${BRL.format(t.netWorthProjected)} projetados`:'disponível + guardado';
+  const officialInvestments=investmentAccounts.filter(a=>['emergency','treasury-2029','treasury-2032'].includes(a.systemKey));
+  const investmentCurrent=sum(officialInvestments.map(a=>Number(a.currentValue||0)));
+  const investmentContributed=sum(officialInvestments.map(a=>Number(a.contributed||0)));
+  $('#mReserves').textContent=BRL.format(investmentCurrent);
+  $('#mReservesSub').textContent=`${BRL.format(investmentContributed)} aportados`;
+  $('#mNetWorth').textContent=BRL.format(t.endReal+investmentCurrent);
+  $('#mNetWorthSub').textContent='disponível + posição atual';
   $('#budgetMonth').textContent=MONTHS[selectedMonth];
   $('#summaryMonth').textContent=MONTHS[selectedMonth];
   $('#sIncome').textContent=BRL.format(t.incomeReal);
@@ -1119,63 +1180,167 @@ $('#newCategoryName').addEventListener('keydown',e=>{
 });
 
 
+function preferredReserveAccounts(){
+  return reserveAccounts.filter(a=>['emergency','treasury-2029','treasury-2032'].includes(a.systemKey))
+}
+
 function populateReserveSelect(){
   const sel=$('#rAccount');
+  const previous=sel.value;
   sel.innerHTML='';
-  reserveAccounts.forEach(a=>{
+  const accounts=preferredReserveAccounts();
+
+  accounts.forEach(a=>{
     const o=document.createElement('option');
     o.value=a.id;
     o.textContent=a.name;
     sel.appendChild(o)
-  })
+  });
+
+  if(accounts.some(a=>a.id===previous))sel.value=previous
 }
 
-function renderReserves(model=buildCashModel()){
+function investmentAccountById(id){
+  return investmentAccounts.find(a=>a.id===id)
+}
+
+function investmentDateLabel(value){
+  if(!value)return '';
+  const [y,m,d]=String(value).slice(0,10).split('-');
+  return `${d}/${m}/${y}`
+}
+
+function investmentRateLabel(value){
+  if(value===null||value===undefined||value==='')return '—';
+  return `${Number(value).toFixed(2).replace('.',',')}% a.a.`
+}
+
+function investmentBars(account){
+  const points=(account.valuations||[]).map(v=>Number(v.currentValue||0));
+
+  if(!points.length){
+    let running=Number(account.openingBalance||0);
+    (account.lots||[]).forEach(lot=>{
+      running+=Number(lot.amount||0);
+      points.push(running)
+    })
+  }
+
+  if(!points.length)points.push(Number(account.currentValue||0));
+
+  const max=Math.max(...points,1);
+  return points.slice(-12).map(value=>`<i style="height:${Math.max(8,Math.round(value/max*100))}%"></i>`).join('')
+}
+
+function renderReserves(){
   const box=$('#reserveList');
   box.innerHTML='';
 
-  if(!reserveAccounts.length){
+  const accounts=investmentAccounts.filter(a=>['emergency','treasury-2029','treasury-2032'].includes(a.systemKey)).sort((a,b)=>{
+    const order={'emergency':1,'treasury-2029':2,'treasury-2032':3};
+    const ao=order[a.systemKey]||20;
+    const bo=order[b.systemKey]||20;
+    return ao-bo||Number(a.sortOrder||0)-Number(b.sortOrder||0)
+  });
+
+  if(!accounts.length){
     box.innerHTML='<div class="helper" style="padding:12px 0">Nenhuma reserva cadastrada.</div>';
     return
   }
 
-  reserveAccounts.forEach(account=>{
-    let real=Number(account.openingReal||0);
-    let projected=Number(account.openingProjected||0);
+  let currentTotal=0;
+  let contributedTotal=0;
+  let maturityTotal=0;
 
-    reserveTransfers
-      .filter(t=>t.account===account.id)
-      .forEach(t=>{
-        const signed=t.direction==='to_reserve'?Number(t.value):-Number(t.value);
-        projected+=signed;
-        if(t.status==='realized')real+=signed
-      });
+  accounts.forEach(account=>{
+    currentTotal+=Number(account.currentValue||0);
+    contributedTotal+=Number(account.contributed||0);
+    maturityTotal+=Number(account.projectedMaturityValue||account.currentValue||0);
 
-    const row=document.createElement('div');
-    row.className='reserve-row';
-    row.innerHTML=`<div><strong>${escapeHtml(account.name)}</strong><small>dinheiro fora do saldo disponível</small></div><div class="reserve-value"><span>real</span><b>${BRL.format(real)}</b></div><div class="reserve-value"><span>projetado</span><b>${BRL.format(projected)}</b></div>`;
-    box.appendChild(row)
-  })
+    const treasury=account.assetType==='treasury_fixed';
+    const marketGain=Number(account.currentValue||0)-Number(account.contributed||0);
+    const futureGain=Number(account.projectedMaturityValue||0)-Number(account.contributed||0);
+
+    const card=document.createElement('article');
+    card.className='investment-card';
+    card.innerHTML=`
+      <div class="investment-card-head">
+        <div>
+          <div class="investment-name">${escapeHtml(account.name)}</div>
+          <div class="investment-type">${treasury?`Tesouro Prefixado · vence ${investmentDateLabel(account.maturityDate)}`:'reserva com liquidez'}</div>
+        </div>
+        <span class="investment-pill ${treasury?'lock':''}">${treasury?'até o vencimento':'liquidez'}</span>
+      </div>
+
+      <div class="investment-value">${BRL.format(Number(account.currentValue||0))}</div>
+      <div class="investment-value-label">${treasury?'posição atual informada':'saldo atual'}</div>
+
+      <div class="investment-meta">
+        <div><span>Aportado</span><b>${BRL.format(Number(account.contributed||0))}</b></div>
+        <div><span>${treasury?'Mercado x aportado':'Diferença'}</span><b class="${marketGain>=0?'good':'bad'}">${marketGain>=0?'+ ':''}${BRL.format(marketGain)}</b></div>
+      </div>
+
+      ${treasury?`
+        <div class="contract-box">
+          <div class="contract-line"><span>Taxa dos lotes</span><b>${investmentRateLabel(account.weightedRate??account.defaultRate)}</b></div>
+          <div class="contract-line"><span>Projetado bruto no vencimento</span><b class="good">${BRL.format(Number(account.projectedMaturityValue||0))}</b></div>
+          <div class="contract-line"><span>Ganho contratado futuro</span><b class="good">${futureGain>=0?'+ ':''}${BRL.format(futureGain)}</b></div>
+        </div>
+      `:''}
+
+      <div class="investment-bars">${investmentBars(account)}</div>
+      <div class="investment-chart-note">${account.valuations?.length?'evolução das posições informadas':'evolução dos aportes registrados'}</div>
+
+      <div class="investment-actions">
+        <button class="investment-link" type="button" data-invest-detail="${account.id}">ver lotes e evolução</button>
+        <button class="investment-link" type="button" data-invest-save="${account.id}">+ aportar</button>
+      </div>`;
+
+    box.appendChild(card)
+  });
+
+  $('#portfolioCurrent').textContent=BRL.format(currentTotal);
+  $('#portfolioContributed').textContent=BRL.format(contributedTotal);
+  $('#portfolioMaturity').textContent=BRL.format(maturityTotal);
+  $('#portfolioFutureGain').textContent=`${maturityTotal-contributedTotal>=0?'+ ':''}${BRL.format(maturityTotal-contributedTotal)}`;
+
+  box.querySelectorAll('[data-invest-save]').forEach(button=>button.addEventListener('click',()=>{
+    openReserveTransferModal('to_reserve',selectedMonth,'');
+    $('#rAccount').value=button.dataset.investSave;
+    refreshReserveRateField()
+  }));
+
+  box.querySelectorAll('[data-invest-detail]').forEach(button=>button.addEventListener('click',()=>openInvestmentDetail(button.dataset.investDetail)))
 }
 
 const reserveTransferModal=$('#reserveTransferModalBackdrop');
 const reserveManagerModal=$('#reserveManagerModalBackdrop');
 
 function openReserveTransferModal(direction='to_reserve',month=selectedMonth,day=''){
-  if(!reserveAccounts.length){
-    openReserveManager();
+  const officialAccounts=preferredReserveAccounts();
+
+  if(!officialAccounts.length){
+    showError('Os três destinos de investimento ainda não foram preparados. Recarregue a página após o deploy.');
     return
   }
+
+  const today=new Date();
+  const todayMonth=today.getMonth();
+  const defaultDay=day
+    ?Number(day)
+    :(month===todayMonth?Math.min(today.getDate(),daysInMonth(month)):1);
 
   editingReserveTransferId=null;
   $('#reserveTransferTitle').textContent=direction==='to_reserve'?'Guardar dinheiro':'Resgatar dinheiro';
   $('#rDirection').value=direction;
   $('#rMonth').value=String(month);
-  $('#rDay').value=day?String(day):'';
+  $('#rDay').value=String(defaultDay);
   $('#rValue').value='';
   $('#rStatus').value='realized';
   $('#rDescription').value='';
+  $('#rRate').value='';
   populateReserveSelect();
+  refreshReserveRateField();
   reserveTransferModal.classList.add('open')
 }
 
@@ -1190,6 +1355,8 @@ function openReserveTransferEdit(t){
   $('#rDirection').value=t.direction;
   $('#rStatus').value=t.status;
   $('#rDescription').value=t.description||'';
+  $('#rRate').value=t.contractedRate??'';
+  refreshReserveRateField(false);
   $('#dayDrawer').classList.remove('open');
   reserveTransferModal.classList.add('open')
 }
@@ -1206,6 +1373,33 @@ async function deleteReserveTransfer(t){
   }
 }
 
+
+function refreshReserveRateField(useDefault=true){
+  const account=reserveAccounts.find(a=>a.id===$('#rAccount').value);
+  const treasury=account?.assetType==='treasury_fixed'&&$('#rDirection').value==='to_reserve';
+  $('#rRateField').style.display=treasury?'block':'none';
+
+  if(treasury&&useDefault&&($('#rRate').value===''||$('#rRate').value===null)){
+    $('#rRate').value=account.defaultRate??''
+  }
+
+  if(treasury){
+    $('#reserveTransferHelper').textContent=`Este aporte será registrado como um lote próprio. A taxa informada fica vinculada a esta compra até ${investmentDateLabel(account.maturityDate)}.`
+  }else if(account?.assetType==='treasury_fixed'&&$('#rDirection').value==='from_reserve'){
+    $('#reserveTransferHelper').textContent='Venda antecipada de Tesouro: o valor depende da marcação a mercado e o retorno pode ser maior ou menor que o contratado.'
+  }else{
+    $('#reserveTransferHelper').textContent=$('#rDirection').value==='to_reserve'
+      ?'Guardar reduz o saldo disponível sem virar despesa.'
+      :'Resgatar devolve o valor ao saldo disponível.'
+  }
+}
+
+$('#rAccount').addEventListener('change',()=>refreshReserveRateField());
+$('#rDirection').addEventListener('change',()=>{
+  populateReserveSelect();
+  refreshReserveRateField()
+});
+
 $('#reserveTransferForm').addEventListener('submit',async e=>{
   e.preventDefault();
 
@@ -1213,7 +1407,30 @@ $('#reserveTransferForm').addEventListener('submit',async e=>{
   const day=Number($('#rDay').value);
   const value=Number($('#rValue').value);
 
-  if(!value||day<1||day>daysInMonth(month))return;
+  if(!Number.isFinite(value)||value<=0){
+    showError('Informe um valor maior que zero.');
+    return
+  }
+
+  if(!Number.isInteger(day)||day<1||day>daysInMonth(month)){
+    showError('Informe um dia válido para o lançamento.');
+    return
+  }
+
+  const account=reserveAccounts.find(a=>a.id===$('#rAccount').value);
+
+  if(!account){
+    showError('Escolha um destino para o dinheiro.');
+    return
+  }
+
+  const treasury=account.assetType==='treasury_fixed'&&$('#rDirection').value==='to_reserve';
+  const rate=treasury?Number($('#rRate').value):null;
+
+  if(treasury&&(!Number.isFinite(rate)||rate<=0)){
+    showError('Informe a taxa contratada do Tesouro.');
+    return
+  }
 
   const payload={
     year:currentYear,
@@ -1223,7 +1440,9 @@ $('#reserveTransferForm').addEventListener('submit',async e=>{
     account:$('#rAccount').value,
     direction:$('#rDirection').value,
     status:$('#rStatus').value,
-    description:$('#rDescription').value.trim()
+    description:$('#rDescription').value.trim(),
+    contractedRate:rate,
+    maturityDate:account.maturityDate||null
   };
 
   try{
@@ -1243,6 +1462,82 @@ $('#reserveTransferForm').addEventListener('submit',async e=>{
     reserveTransferModal.classList.remove('open');
     await loadYear(currentYear,false);
     scrollToMonth(month,false)
+  }catch(err){
+    showError(err.message)
+  }
+});
+
+
+const investmentUpdateBackdrop=$('#investmentUpdateBackdrop');
+const investmentDetailBackdrop=$('#investmentDetailBackdrop');
+
+function openInvestmentDetail(accountId){
+  const account=investmentAccountById(accountId);
+  if(!account)return;
+
+  const treasury=account.assetType==='treasury_fixed';
+  const marketGain=Number(account.currentValue||0)-Number(account.contributed||0);
+
+  $('#investmentDetailTitle').textContent=account.name;
+  $('#investmentDetailSummary').innerHTML=`
+    <div class="investment-detail-row"><div><b>Total aportado</b><span>principal aplicado</span></div><b>${BRL.format(Number(account.contributed||0))}</b></div>
+    <div class="investment-detail-row"><div><b>Posição atual</b><span>${treasury?'marcação a mercado informada':'saldo atual'}</span></div><b>${BRL.format(Number(account.currentValue||0))}</b></div>
+    <div class="investment-detail-row"><div><b>Diferença atual</b><span>posição atual menos aportes</span></div><b class="${marketGain>=0?'good':'bad'}">${marketGain>=0?'+ ':''}${BRL.format(marketGain)}</b></div>
+    ${treasury?`<div class="investment-detail-row"><div><b>Projetado bruto no vencimento</b><span>pela taxa de cada lote</span></div><b class="good">${BRL.format(Number(account.projectedMaturityValue||0))}</b></div>`:''}
+  `;
+
+  $('#investmentDetailLots').innerHTML=(account.lots||[]).length
+    ?(account.lots||[]).map(lot=>`
+      <div class="investment-lot">
+        <div><strong>${investmentDateLabel(lot.date)}</strong><small>${treasury?investmentRateLabel(lot.rate):escapeHtml(lot.description||'aporte')}</small></div>
+        <b>${BRL.format(Number(lot.amount||0))}</b>
+        <b class="good">${treasury?BRL.format(Number(lot.projectedMaturityValue||0)):''}</b>
+      </div>`).join('')
+    :'<div class="helper" style="padding:12px 0">Ainda não há aportes realizados registrados neste destino.</div>';
+
+  $('#investmentDetailHelper').textContent=treasury
+    ?'A última coluna mostra a projeção bruta de cada lote no vencimento. A posição de mercado pode oscilar antes disso.'
+    :'A evolução reflete os aportes, resgates e posições atuais informadas.';
+
+  investmentDetailBackdrop.classList.add('open')
+}
+
+function openInvestmentUpdate(){
+  const box=$('#investmentUpdateFields');
+  box.innerHTML='';
+
+  investmentAccounts.filter(a=>['emergency','treasury-2029','treasury-2032'].includes(a.systemKey)).forEach(account=>{
+    const field=document.createElement('div');
+    field.className='field full';
+    field.innerHTML=`<label>${escapeHtml(account.name)} · posição atual</label><input data-investment-current="${account.id}" type="number" min="0" step="0.01" value="${Number(account.currentValue||0).toFixed(2)}">`;
+    box.appendChild(field)
+  });
+
+  investmentUpdateBackdrop.classList.add('open')
+}
+
+$('#investmentUpdateValues').addEventListener('click',openInvestmentUpdate);
+$('#closeInvestmentUpdate').addEventListener('click',()=>investmentUpdateBackdrop.classList.remove('open'));
+$('#cancelInvestmentUpdate').addEventListener('click',()=>investmentUpdateBackdrop.classList.remove('open'));
+investmentUpdateBackdrop.addEventListener('click',e=>{if(e.target===investmentUpdateBackdrop)investmentUpdateBackdrop.classList.remove('open')});
+
+$('#closeInvestmentDetail').addEventListener('click',()=>investmentDetailBackdrop.classList.remove('open'));
+investmentDetailBackdrop.addEventListener('click',e=>{if(e.target===investmentDetailBackdrop)investmentDetailBackdrop.classList.remove('open')});
+
+$('#investmentUpdateForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const valuationDate=new Date().toISOString().slice(0,10);
+
+  try{
+    for(const input of document.querySelectorAll('[data-investment-current]')){
+      await api(`/api/finance/reserve-accounts/${encodeURIComponent(input.dataset.investmentCurrent)}/valuation`,{
+        method:'PUT',
+        body:JSON.stringify({currentValue:Number(input.value||0),valuationDate})
+      })
+    }
+
+    investmentUpdateBackdrop.classList.remove('open');
+    await loadYear(currentYear,false)
   }catch(err){
     showError(err.message)
   }
@@ -1347,7 +1642,7 @@ $('#createReserveButton').addEventListener('click',async()=>{
   }
 });
 
-$('#reserveManagerButton').addEventListener('click',openReserveManager);
+$('#reserveManagerButton')?.addEventListener('click',openReserveManager);
 $('#reserveDepositButton').addEventListener('click',()=>openReserveTransferModal('to_reserve'));
 $('#reserveWithdrawButton').addEventListener('click',()=>openReserveTransferModal('from_reserve'));
 $('#addReserve').addEventListener('click',()=>openReserveTransferModal('to_reserve'));
@@ -1405,7 +1700,10 @@ function scrollToMonth(month,smooth=true){const head=$(`.month-head th[data-mont
 async function loadYear(year,scroll=true){
   showError('');
   try{
-    const state=await api(`/api/finance/state?year=${encodeURIComponent(year)}`);
+    const [state,investmentData]=await Promise.all([
+      api(`/api/finance/state?year=${encodeURIComponent(year)}`),
+      api(`/api/finance/investments?year=${encodeURIComponent(year)}`)
+    ]);
     currentYear=year;
     yearOpeningBalance=Number(state.openingBalance||0);
     warningThreshold=Number(state.warningThreshold??1000);
@@ -1414,6 +1712,7 @@ async function loadYear(year,scroll=true){
     transactions=Array.isArray(state.transactions)?state.transactions:[];
     reserveAccounts=Array.isArray(state.reserveAccounts)?state.reserveAccounts:[];
     reserveTransfers=Array.isArray(state.reserveTransfers)?state.reserveTransfers:[];
+    investmentAccounts=Array.isArray(investmentData.accounts)?investmentData.accounts:[];
     recurringRules=Array.isArray(state.recurringRules)?state.recurringRules:[];
     populateCategorySelect();
     populateReserveSelect();

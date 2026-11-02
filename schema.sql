@@ -292,3 +292,58 @@ WHERE NOT EXISTS (
   SELECT 1 FROM ld4_finance_reserve_accounts WHERE system_key = 'treasury-2032'
 );
 
+-- v5.1.1 · remove a conta genérica "Investimentos" sem perder histórico.
+DO $$
+DECLARE
+  old_id TEXT;
+  emergency_id TEXT;
+  old_opening NUMERIC(14,2);
+BEGIN
+  SELECT id, opening_balance
+    INTO old_id, old_opening
+    FROM ld4_finance_reserve_accounts
+   WHERE id = 'investimentos'
+      OR LOWER(name) = LOWER('Investimentos')
+   ORDER BY CASE WHEN id = 'investimentos' THEN 0 ELSE 1 END
+   LIMIT 1;
+
+  SELECT id
+    INTO emergency_id
+    FROM ld4_finance_reserve_accounts
+   WHERE system_key = 'emergency'
+   LIMIT 1;
+
+  IF old_id IS NOT NULL
+     AND emergency_id IS NOT NULL
+     AND old_id <> emergency_id
+     AND EXISTS (
+       SELECT 1
+         FROM ld4_finance_reserve_accounts
+        WHERE id = old_id
+          AND active = TRUE
+     )
+  THEN
+    UPDATE ld4_finance_reserve_accounts
+       SET opening_balance = opening_balance + COALESCE(old_opening, 0),
+           updated_at = NOW()
+     WHERE id = emergency_id;
+
+    UPDATE ld4_finance_reserve_transfers
+       SET account_id = emergency_id,
+           updated_at = NOW()
+     WHERE account_id = old_id;
+
+    UPDATE ld4_finance_reserve_accounts
+       SET opening_balance = 0,
+           active = FALSE,
+           updated_at = NOW()
+     WHERE id = old_id;
+  END IF;
+END $$;
+
+-- Garante que os três destinos oficiais permaneçam ativos.
+UPDATE ld4_finance_reserve_accounts
+   SET active = TRUE,
+       updated_at = NOW()
+ WHERE system_key IN ('emergency', 'treasury-2029', 'treasury-2032');
+

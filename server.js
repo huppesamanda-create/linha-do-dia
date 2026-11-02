@@ -1265,6 +1265,15 @@ async function handleApi(req, res, url) {
       ? (maturityDate || financeIsoDate(accountRow.maturity_date))
       : null;
 
+    if (
+      accountRow.asset_type === "treasury_fixed" &&
+      direction === "to_reserve" &&
+      (!Number.isFinite(finalRate) || finalRate <= 0 || !finalMaturity)
+    ) {
+      sendJson(res, 400, { error: "Informe a taxa contratada do Tesouro." });
+      return true;
+    }
+
     const result = await pool.query(
       `INSERT INTO ld4_finance_reserve_transfers
         (id, transfer_date, account_id, direction, amount, status, description, contracted_rate, maturity_date)
@@ -1335,6 +1344,15 @@ async function handleApi(req, res, url) {
     const finalMaturity = accountRow.asset_type === "treasury_fixed"
       ? (maturityDate || financeIsoDate(accountRow.maturity_date))
       : null;
+
+    if (
+      accountRow.asset_type === "treasury_fixed" &&
+      direction === "to_reserve" &&
+      (!Number.isFinite(finalRate) || finalRate <= 0 || !finalMaturity)
+    ) {
+      sendJson(res, 400, { error: "Informe a taxa contratada do Tesouro." });
+      return true;
+    }
 
     const result = await pool.query(
       `UPDATE ld4_finance_reserve_transfers

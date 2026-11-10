@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#050505">
-<title>Financeiro</title>
+<title>Linha do Dia · Financeiro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
 :root{
   --bg:#050505;--surface:#080808;--surface2:#0b0b0b;--line:#191919;--line2:#292929;
   --text:#d8d8d8;--strong:#efefef;--muted:#727272;--muted2:#474747;
-  --green:#9eb49b;--red:#c48686;--amber:#c2a26d;
+  --green:#9eb49b;--red:#c48686;--amber:#c2a26d;--card:#9b87b8;--card2:#6f6083;--cardBg:rgba(135,109,168,.10);
 }
 *{box-sizing:border-box}
 html{background:var(--bg);color-scheme:dark}
@@ -48,7 +48,7 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
 .btn:hover{border-color:#444;color:#c8c8c8;background:#0c0c0c}
 .btn.primary{background:#d2d2d2;color:#080808;border-color:#d2d2d2}.btn.primary:hover{background:#eee;border-color:#eee}
 
-.metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:8px}
+.metrics{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:8px}
 .metric{padding:8px 13px 8px 0}.metric+.metric{border-left:1px solid var(--line);padding-left:13px}
 .metric label{display:block;color:#525252;text-transform:uppercase;letter-spacing:.09em;font-size:9px;font-weight:800}
 .metric strong{display:block;margin-top:3px;font-size:15px;font-weight:650;letter-spacing:-.025em;color:#cfcfcf;font-variant-numeric:tabular-nums}
@@ -71,8 +71,8 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
 }
 .annual-scroll.dragging{cursor:grabbing}
 .annual-scroll::-webkit-scrollbar{height:9px}.annual-scroll::-webkit-scrollbar-track{background:#090909}.annual-scroll::-webkit-scrollbar-thumb{background:#242424;border-radius:99px}
-.annual-table{border-collapse:separate;border-spacing:0;table-layout:fixed;min-width:9800px}
-.annual-table col.date{width:46px}.annual-table col.money{width:106px}.annual-table col.reserve{width:96px}
+.annual-table{border-collapse:separate;border-spacing:0;table-layout:fixed;min-width:11200px}
+.annual-table col.date{width:46px}.annual-table col.money{width:106px}.annual-table col.reserve{width:96px}.annual-table col.cardcol{width:118px}
 .month-head th{
   height:23px;border-right:1px solid #202020;border-bottom:1px solid #202020;color:#777;font-size:8.5px;font-weight:800;
   letter-spacing:.08em;text-transform:uppercase;text-align:center;background:#050505;cursor:pointer;position:sticky;top:0;z-index:3
@@ -93,6 +93,10 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
 .annual-table td.real-in{color:#a0b49d}.annual-table td.real-out{color:#ad8585}.annual-table td.provisioned{color:#8d7d5d;font-style:italic}
 .annual-table td.reserve-move{color:#7f8f9e}
 .annual-table td.reserve-move.provisioned{color:#6e7480}
+
+.annual-table .card-head{color:#675a76;background:#070608}.annual-table td.card-purchase{color:#9582ad;background:rgba(125,98,157,.035);cursor:pointer}.annual-table td.card-purchase.invoice-due{color:#baa6d1;background:rgba(125,98,157,.11);font-weight:800}.card-color{color:var(--card)!important}.btn.card-action{border-color:#332b3e;color:#8e7aa9;background:rgba(125,98,157,.06)}.btn.card-action:hover{background:rgba(125,98,157,.13);color:#b5a0ce;border-color:#554667}
+.card-section{margin-top:28px;padding-top:21px;border-top:1px solid #1c1c1c}.card-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}.card-section-head h2{margin:0;color:#cfcfcf;font-size:15px;letter-spacing:-.02em}.card-section-head p{margin:3px 0 0;color:#494949;font-size:9px}.cards-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin-top:13px}.credit-card{border:1px solid #211c27;border-radius:8px;background:#070607;padding:14px;min-height:150px}.credit-card.placeholder{border-style:dashed;display:flex;align-items:center;justify-content:center;color:#4a4053;cursor:pointer}.credit-card-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}.credit-card-name{color:#a896bd;font-size:11px;font-weight:800}.credit-card-cycle{color:#4e4655;font-size:8px;margin-top:2px}.card-pill{border:1px solid #362e40;color:#756585;border-radius:999px;padding:2px 6px;font-size:7px}.invoice-values{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px}.invoice-value{border-top:1px solid #1b1720;padding-top:8px}.invoice-value span{display:block;color:#51495a;text-transform:uppercase;font-size:7px;letter-spacing:.08em}.invoice-value b{display:block;color:#a292b4;font-size:14px;margin-top:3px}.invoice-value small{display:block;color:#403a45;font-size:7px;margin-top:2px}.card-progress{height:3px;background:#17141b;border-radius:20px;margin-top:12px;overflow:hidden}.card-progress i{display:block;height:100%;background:#766487}.card-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;color:#4a4350;font-size:8px}.card-link{border:0;background:transparent;color:#61556e;padding:0;font-size:8px}.card-link:hover{color:#9d8aaf}.invoice-status{display:inline-flex;align-items:center;gap:5px}.invoice-status i{width:5px;height:5px;border-radius:50%;background:#6d5a7b}.invoice-status.paid{color:#789273}.invoice-status.paid i{background:#789273}.budget-card-note{display:inline-flex;margin-left:5px;color:#71627f;border:1px solid #2b2432;border-radius:99px;padding:1px 4px;font-size:7px}.summary-line.card-line strong{color:#9b87b8}.modal.card-modal{border-color:#30273a}.invoice-preview{margin-top:14px;border:1px solid #241e2c;border-radius:7px;background:#070607;padding:11px 12px}.invoice-preview span{display:block;color:#5c5068;font-size:8px;text-transform:uppercase;letter-spacing:.08em}.invoice-preview strong{display:block;margin-top:4px;color:#aa96c0;font-size:12px}.manage-row{display:grid;grid-template-columns:minmax(0,1fr) 95px 95px auto auto;gap:9px;align-items:end;padding:10px 0;border-bottom:1px solid #151219}.manage-row button{height:34px;border:0;background:transparent;color:#655671}.manage-row button:hover{color:#a68fba}.card-purchase-badge{display:inline-flex;margin-left:6px;color:#766487;border:1px solid #2a2331;border-radius:999px;padding:1px 4px;font-size:7px}.mov.card-mov{border-left:2px solid #51405f;padding-left:9px}
+
 .reserve-grid{margin-top:34px;border-top:1px solid #1c1c1c;padding-top:22px}
 .reserve-title-line{display:flex;align-items:center;gap:8px}
 .reserve-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
@@ -142,7 +146,7 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
 .category-manager-button:hover{background:#0d0d0d;color:#8b8b8b}
 .category-manager-list{border-top:1px solid #1d1d1d;margin-top:12px}
 .category-manager-row{
-  display:grid;grid-template-columns:minmax(0,1fr) 118px auto auto;gap:9px;align-items:end;
+  display:grid;grid-template-columns:minmax(0,1fr) 118px auto;gap:9px;align-items:end;
   padding:10px 0;border-bottom:1px solid #111
 }
 .category-manager-row .field{min-width:0}
@@ -152,7 +156,7 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
 }
 .category-manager-save:hover{background:#101010;color:#bbb}
 .category-manager-delete{
-  width:30px;height:31px;border:0;border-radius:5px;background:transparent;color:#4f3535;padding:0;font-size:14px
+  border:1px solid #241515;background:#090505;color:#6e4747;border-radius:5px;padding:8px 10px;cursor:pointer;font-size:12px
 }
 .category-manager-delete:hover{background:#160c0c;color:#b56f6f}
 .new-category-row{display:flex;gap:8px;margin-top:15px}
@@ -233,29 +237,15 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
 .investment-notice{margin-top:12px;padding:9px 10px;border-left:2px solid #4a3c29;background:#090806;color:#6d6250;font-size:8px;line-height:1.5}
 .investment-detail-row{display:flex;justify-content:space-between;gap:18px;padding:10px 0;border-bottom:1px solid #111}.investment-detail-row b{display:block;color:#8e8e8e;font-size:10px}.investment-detail-row span{display:block;margin-top:2px;color:#454545;font-size:8px}
 .investment-lot{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid #111}.investment-lot strong{display:block;color:#8f8f8f;font-size:9px}.investment-lot small{display:block;color:#444;font-size:7px}.investment-lot b{color:#8d8d8d;font-size:9px}
+@media(max-width:1000px){.metrics{grid-template-columns:repeat(2,1fr)}.cards-grid{grid-template-columns:1fr}.card-section-head{align-items:flex-start;flex-direction:column}}
 @media(max-width:900px){.investment-grid{grid-template-columns:1fr}.portfolio-strip{grid-template-columns:1fr 1fr}}
-
-
-.scope-switch-wrap{display:flex;align-items:center;gap:10px}
-.scope-name{color:#4d4d4d;font-size:9px;text-align:right}
-.scope-tabs{display:flex;align-items:center;padding:3px;border:1px solid #1c1c1c;border-radius:8px;background:#070707}
-.scope-tab{border:0;background:transparent;color:#525252;padding:7px 16px;border-radius:6px;font-size:9px;font-weight:800;letter-spacing:.07em}
-.scope-tab.active{background:#171717;color:#d0d0d0}
-@media(max-width:700px){.topbar{align-items:flex-start}.scope-switch-wrap{flex-direction:column;align-items:flex-end}}
 
 </style>
 </head>
 <body>
 <main class="shell">
 <header class="topbar">
-  <div><div class="kicker" id="scopeKicker">Fluxo de caixa pessoal</div><h1>Financeiro</h1></div>
-  <div class="scope-switch-wrap">
-    <div class="scope-name" id="scopeName">Pessoa Física</div>
-    <div class="scope-tabs" role="tablist" aria-label="Alternar entre pessoa física e pessoa jurídica">
-      <button class="scope-tab active" type="button" data-finance-scope="pf">PF</button>
-      <button class="scope-tab" type="button" data-finance-scope="pj">PJ</button>
-    </div>
-  </div>
+  <div><div class="kicker">Linha do Dia</div><h1>Financeiro</h1></div>
 </header>
 
 <div id="financeError" style="display:none;margin-bottom:20px;padding:10px 12px;border:1px solid #2b1f1f;border-radius:7px;color:#a67b7b;font-size:10px;background:#090707"></div>
@@ -264,7 +254,7 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
   <div>
     <div class="kicker">Fluxo de caixa anual</div>
     <h2>Visão dos 12 meses</h2>
-    <p id="scopeHeadline">Clique em Entrada, Saída ou Diário para lançar e testar valores. A coluna Reserva tira dinheiro do disponível sem transformar isso em gasto.</p>
+    <p>Clique em Entrada, Saída, Diário ou Cartão para lançar valores. Compras no crédito entram no orçamento na data da compra e só saem do caixa quando a fatura é paga.</p>
   </div>
   <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
     <div class="year-switch">
@@ -273,6 +263,7 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
     <div class="quick-actions">
       <button class="btn" id="addIncome">+ entrada</button>
       <button class="btn primary" id="addExpense">+ gasto</button>
+      <button class="btn card-action" id="addCardPurchase">+ cartão</button>
       <button class="btn" id="addReserve">↗ guardar</button>
     </div>
   </div>
@@ -280,16 +271,18 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
 
 <section class="metrics">
   <div class="metric"><label>Mês selecionado</label><strong id="mMonth">Agosto</strong><small>clique no mês na grade</small></div>
-  <div class="metric"><label id="mRealLabel">Saldo disponível</label><strong class="good" id="mReal">R$ 0,00</strong><small>dinheiro livre hoje</small></div>
-  <div class="metric"><label id="mProjectedLabel">Saldo projetado</label><strong id="mProjected">R$ 0,00</strong><small>disponível após provisões</small></div>
-  <div class="metric"><label id="mReservesLabel">Reservas e investimentos</label><strong id="mReserves">R$ 0,00</strong><small id="mReservesSub">valor guardado</small></div>
-  <div class="metric"><label id="mNetWorthLabel">Patrimônio financeiro</label><strong id="mNetWorth">R$ 0,00</strong><small id="mNetWorthSub">disponível + guardado</small></div>
+  <div class="metric"><label>Saldo disponível</label><strong class="good" id="mReal">R$ 0,00</strong><small>dinheiro livre hoje</small></div>
+  <div class="metric"><label>Saldo projetado</label><strong id="mProjected">R$ 0,00</strong><small>disponível após provisões e faturas</small></div>
+  <div class="metric"><label>Compras no cartão</label><strong class="card-color" id="mCardPurchases">R$ 0,00</strong><small>compradas neste mês</small></div>
+  <div class="metric"><label>Faturas do mês</label><strong class="card-color" id="mInvoices">R$ 0,00</strong><small>vencimentos do mês</small></div>
+  <div class="metric"><label>Reservas e investimentos</label><strong id="mReserves">R$ 0,00</strong><small id="mReservesSub">valor guardado</small></div>
+  <div class="metric"><label>Patrimônio financeiro</label><strong id="mNetWorth">R$ 0,00</strong><small id="mNetWorthSub">disponível + guardado</small></div>
 </section>
 
 <div class="safety-row">
   <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
     <div class="safety-control">
-      <label for="openingBalance" id="openingBalanceLabel">Saldo inicial do ano</label>
+      <label for="openingBalance">Saldo inicial do ano</label>
       <input id="openingBalance" type="number" step="100" value="0">
     </div>
     <div class="safety-control">
@@ -315,12 +308,20 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
   </div>
 </section>
 
+<section class="card-section">
+  <div class="card-section-head">
+    <div><div class="kicker">Crédito · <span class="selected-month" id="cardMonth">mês</span></div><h2>Cartões e faturas</h2><p>A compra conta no orçamento quando acontece. O caixa é afetado apenas quando a fatura é paga.</p></div>
+    <div class="quick-actions"><button class="btn" id="manageCards" type="button">Gerenciar cartões</button><button class="btn card-action" id="addCardPurchase2" type="button">+ compra no cartão</button></div>
+  </div>
+  <div class="cards-grid" id="cardsGrid"></div>
+</section>
+
 <div class="after-sheet">
   <section>
     <div class="section-title">
       <div class="kicker">Orçamentos · <span class="selected-month" id="budgetMonth">Agosto</span></div>
       <div class="budget-title-line">
-        <h2 id="budgetTitle">Limites por categoria</h2>
+        <h2>Limites por categoria</h2>
         <button
           class="category-manager-button"
           id="categoryManagerButton"
@@ -329,7 +330,7 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
           aria-label="Gerenciar categorias e orçamentos"
         >···</button>
       </div>
-      <p id="budgetCopy">O orçamento continua separado da grade para ela permanecer limpa.</p>
+      <p>O orçamento continua separado da grade para ela permanecer limpa.</p>
     </div>
     <table class="budget-table">
       <thead><tr><th>Categoria</th><th>Orçamento</th><th>Realizado</th><th>Provisionado</th><th>Disponível</th></tr></thead>
@@ -340,18 +341,21 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
     <div class="section-title">
       <div class="kicker">Leitura rápida · <span class="selected-month" id="summaryMonth">Agosto</span></div>
       <h2>Fechamento do mês</h2>
-      <p id="summaryCopy">O teste afeta apenas a projeção até você decidir salvá-lo.</p>
+      <p>O teste afeta apenas a projeção até você decidir salvá-lo.</p>
     </div>
     <div class="summary-box">
       <div class="summary-line"><span>Entradas realizadas</span><strong id="sIncome"></strong></div>
-      <div class="summary-line"><span>Saídas realizadas</span><strong id="sRealExpenses"></strong></div>
-      <div class="summary-line"><span>Saídas provisionadas</span><strong id="sProvExpenses"></strong></div>
+      <div class="summary-line"><span>Saídas diretas realizadas</span><strong id="sRealExpenses"></strong></div>
+      <div class="summary-line card-line"><span>Compras no cartão</span><strong id="sCardPurchases"></strong></div>
+      <div class="summary-line card-line"><span>Faturas vencendo</span><strong id="sInvoices"></strong></div>
+      <div class="summary-line"><span>Saídas diretas provisionadas</span><strong id="sProvExpenses"></strong></div>
       <div class="summary-line"><span>Performance real</span><strong id="sPerformance"></strong></div>
       <div class="summary-line main"><span>Saldo projetado</span><strong id="sProjected"></strong></div>
     </div>
     <div class="legend">
       <span class="tag realized"><span class="dot"></span> realizado</span>
       <span class="tag prov"><span class="dot"></span> provisionado</span>
+      <span class="tag" style="color:#73627f"><span class="dot" style="background:#88729d"></span> cartão</span>
       <span class="tag warning"><span class="dot"></span> apertado</span>
       <span class="tag negative"><span class="dot"></span> faltará dinheiro</span>
     </div>
@@ -361,11 +365,11 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
 <section class="reserve-grid">
   <div class="investment-head">
     <div>
-      <div class="kicker" id="assetKicker">Patrimônio separado do dinheiro de gastar</div>
+      <div class="kicker">Patrimônio separado do dinheiro de gastar</div>
       <div class="reserve-title-line">
-        <h2 id="assetTitle">Reservas e investimentos</h2>
+        <h2>Reservas e investimentos</h2>
       </div>
-      <p id="assetCopy">Guardar reduz o saldo disponível sem virar despesa. Nos Prefixados, a posição atual fica separada do valor contratado no vencimento.</p>
+      <p>Guardar reduz o saldo disponível sem virar despesa. Nos Prefixados, a posição atual fica separada do valor contratado no vencimento.</p>
     </div>
     <div class="investment-head-actions">
       <button class="btn" id="reserveWithdrawButton" type="button">↙ Resgatar</button>
@@ -375,15 +379,15 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
   </div>
 
   <div class="portfolio-strip">
-    <div class="port-stat"><span id="portfolioLabel1">Posição atual total</span><b id="portfolioCurrent">—</b></div>
-    <div class="port-stat"><span id="portfolioLabel2">Total aportado</span><b id="portfolioContributed">—</b></div>
-    <div class="port-stat"><span id="portfolioLabel3">Projetado bruto no vencimento</span><b class="good" id="portfolioMaturity">—</b></div>
-    <div class="port-stat"><span id="portfolioLabel4">Ganho contratado futuro*</span><b class="good" id="portfolioFutureGain">—</b></div>
+    <div class="port-stat"><span>Posição atual total</span><b id="portfolioCurrent">—</b></div>
+    <div class="port-stat"><span>Total aportado</span><b id="portfolioContributed">—</b></div>
+    <div class="port-stat"><span>Projetado bruto no vencimento</span><b class="good" id="portfolioMaturity">—</b></div>
+    <div class="port-stat"><span>Ganho contratado futuro*</span><b class="good" id="portfolioFutureGain">—</b></div>
   </div>
 
   <div class="investment-grid" id="reserveList"></div>
 
-  <div class="investment-notice" id="assetNotice">
+  <div class="investment-notice">
     *No Tesouro Prefixado, a taxa é contratada em cada compra. Se você carregar o título até o vencimento, a projeção segue aquela taxa. Antes disso, a posição pode subir ou cair por marcação a mercado; uma venda antecipada pode gerar retorno maior ou menor que o contratado.
   </div>
 </section>
@@ -530,6 +534,33 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
   </form>
 </div>
 
+<div class="modal-backdrop" id="cardPurchaseBackdrop">
+<form class="modal card-modal" id="cardPurchaseForm">
+  <div class="modal-head"><div><div class="kicker" id="cardPurchaseKicker">Crédito</div><h3 id="cardPurchaseTitle">Nova compra no cartão</h3></div><button class="close" type="button" id="closeCardPurchase">×</button></div>
+  <div class="form-grid">
+    <div class="field"><label>Data da compra</label><input id="pDate" type="date" required></div>
+    <div class="field"><label>Cartão</label><select id="pCard" required></select></div>
+    <div class="field"><label>Categoria</label><select id="pCategory" required></select></div>
+    <div class="field"><label>Valor total</label><input id="pValue" type="number" min="0.01" step="0.01" required></div>
+    <div class="field"><label>Parcelas</label><select id="pInstallments"></select></div>
+    <div class="field full"><label>Descrição</label><input id="pDescription" maxlength="500" placeholder="Ex.: mercado, passagem, curso..."></div>
+  </div>
+  <div class="invoice-preview"><span>Como será cobrado</span><strong id="invoicePreview">Selecione a data e o cartão.</strong></div>
+  <div class="helper">O valor total entra na categoria na data da compra. No fluxo de caixa, cada parcela entra na respectiva fatura.</div>
+  <div class="modal-actions"><button class="btn" type="button" id="cancelCardPurchase">Cancelar</button><button class="btn primary" type="submit">Salvar compra</button></div>
+</form>
+</div>
+
+<div class="modal-backdrop" id="cardManagerBackdrop">
+<section class="modal card-modal">
+  <div class="modal-head"><div><div class="kicker">Configuração</div><h3>Cartões de crédito</h3></div><button class="close" type="button" id="closeCardManager">×</button></div>
+  <div id="cardManagerList"></div>
+  <div class="new-category-row"><input id="newCardName" placeholder="Novo cartão"><input id="newCardClose" type="number" min="1" max="31" value="5" placeholder="Fecha" style="max-width:90px"><input id="newCardDue" type="number" min="1" max="31" value="12" placeholder="Vence" style="max-width:90px"><button class="btn" id="createCardButton" type="button">Criar</button></div>
+  <div class="category-manager-note">Fechamento define em qual fatura a compra entra. Vencimento define quando a parcela afeta o saldo projetado.</div>
+  <div class="inline-error" id="cardManagerError"></div>
+</section>
+</div>
+
 <div class="modal-backdrop" id="categoryModalBackdrop">
   <section class="modal" aria-labelledby="categoryModalTitle">
     <div class="modal-head">
@@ -578,9 +609,13 @@ let categoryCatalog=[];
 let budgets=[];
 let reserveAccounts=[];
 let investmentAccounts=[];
-let financeScope=localStorage.getItem('finance_scope')==='pj'?'pj':'pf';
 let reserveTransfers=[];
 let recurringRules=[];
+let creditCards=[];
+let creditCardCatalog=[];
+let creditCardPurchases=[];
+let creditCardInvoices=[];
+let editingCardPurchaseId=null;
 let selectedBudgetCategory=null;
 let editingRecurringRuleId=null;
 let editingTransactionId=null;
@@ -590,24 +625,7 @@ let formMode='expense';
 
 
 async function api(path,options={}){
-  let finalPath=path;
-  let finalOptions={...options};
-
-  if(String(path).startsWith('/api/finance/')){
-    finalPath+=path.includes('?')?`&scope=${encodeURIComponent(financeScope)}`:`?scope=${encodeURIComponent(financeScope)}`;
-
-    if(options.body){
-      try{
-        const parsed=JSON.parse(options.body);
-        if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed)){
-          parsed.scope=financeScope;
-          finalOptions.body=JSON.stringify(parsed)
-        }
-      }catch{}
-    }
-  }
-
-  const response=await fetch(finalPath,{headers:{'Content-Type':'application/json',...(options.headers||{})},...finalOptions});
+  const response=await fetch(path,{headers:{'Content-Type':'application/json',...(options.headers||{})},...options});
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(data.error||'Não foi possível concluir a operação.');
   return data;
@@ -637,6 +655,41 @@ function reserveDay(m,d){return reserveMonth(m).filter(t=>t.day===d)}
 function reserveOpeningReal(){return sum(reserveAccounts.map(a=>a.openingReal))}
 function reserveOpeningProjected(){return sum(reserveAccounts.map(a=>a.openingProjected))}
 
+function parseLocalDate(value){const [y,m,d]=String(value||'').split('-').map(Number);return y&&m&&d?new Date(y,m-1,d):null}
+function localDateKey(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`}
+function cardById(id){return creditCardCatalog.find(c=>c.id===id)||creditCards.find(c=>c.id===id)||null}
+function cardName(id){return cardById(id)?.name||'Cartão'}
+function cardPurchasesMonth(m){return creditCardPurchases.filter(p=>{const dt=parseLocalDate(p.date);return dt&&dt.getFullYear()===currentYear&&dt.getMonth()===m})}
+function cardPurchasesDay(m,d){return cardPurchasesMonth(m).filter(p=>parseLocalDate(p.date)?.getDate()===d)}
+function cardPurchaseTotalMonth(m){return sum(cardPurchasesMonth(m).map(p=>p.value))}
+function cardPurchaseCategoryTotal(m,category){return sum(cardPurchasesMonth(m).filter(p=>p.category===category).map(p=>p.value))}
+function cardDueDateForPurchase(p,index=0){
+  const dt=parseLocalDate(p.date),card=cardById(p.card);if(!dt||!card)return null;
+  let y=dt.getFullYear(),m=dt.getMonth();
+  if(dt.getDate()>card.closingDay){m++;if(m>11){m=0;y++}}
+  if(card.dueDay<=card.closingDay){m++;if(m>11){m=0;y++}}
+  m+=index;y+=Math.floor(m/12);m=((m%12)+12)%12;
+  return new Date(y,m,Math.min(card.dueDay,new Date(y,m+1,0).getDate()))
+}
+function cardInstallmentsForPurchase(p){
+  const n=Math.max(1,Number(p.installments||1)),base=Number(p.value||0),regular=Math.floor((base/n)*100)/100;
+  return Array.from({length:n},(_,i)=>{const amount=i===n-1?Math.round((base-regular*(n-1))*100)/100:regular;return{purchase:p,card:p.card,date:cardDueDateForPurchase(p,i),amount,index:i+1,total:n}})
+}
+function allCardInstallments(){return creditCardPurchases.flatMap(cardInstallmentsForPurchase).filter(i=>i.date)}
+function invoiceTotal(cardId,year,month){return sum(allCardInstallments().filter(i=>i.card===cardId&&i.date.getFullYear()===year&&i.date.getMonth()===month).map(i=>i.amount))}
+function invoiceTotalMonth(month){return sum(creditCardCatalog.map(c=>invoiceTotal(c.id,currentYear,month)))}
+function invoiceDueDay(month,day){return allCardInstallments().filter(i=>i.date.getFullYear()===currentYear&&i.date.getMonth()===month&&i.date.getDate()===day)}
+function invoiceState(cardId,dueDate){const key=typeof dueDate==='string'?dueDate:localDateKey(dueDate);return creditCardInvoices.find(i=>i.card===cardId&&i.dueDate===key)||{card:cardId,dueDate:key,status:'open',paidDate:null}}
+function invoiceGroupsForDay(month,day){
+  const map=new Map();invoiceDueDay(month,day).forEach(i=>{const key=`${i.card}|${localDateKey(i.date)}`;if(!map.has(key))map.set(key,{card:i.card,dueDate:localDateKey(i.date),date:i.date,amount:0});map.get(key).amount+=Number(i.amount)});return [...map.values()]
+}
+function paidInvoiceGroupsOnDay(month,day){
+  return creditCardInvoices.filter(i=>i.status==='paid'&&i.paidDate).flatMap(state=>{
+    const paid=parseLocalDate(state.paidDate),due=parseLocalDate(state.dueDate);if(!paid||!due||paid.getFullYear()!==currentYear||paid.getMonth()!==month||paid.getDate()!==day)return[];
+    return[{...state,amount:invoiceTotal(state.card,due.getFullYear(),due.getMonth())}]
+  })
+}
+
 function draftApplies(m,d){if(!testDraft||testDraft.year!==currentYear)return false;return m>testDraft.month||(m===testDraft.month&&d>=testDraft.day)}
 function draftOnCell(m,d,type,nature=null){
   return Boolean(
@@ -660,7 +713,7 @@ function buildCashModel(){
   for(let m=0;m<12;m++){
     const startProjected=projected,startReal=real;
     const reserveStartProjected=reserveProjected,reserveStartReal=reserveReal;
-    let incomeReal=0,incomeProv=0,expReal=0,expProv=0,fixed=0,dailyOut=0,reserveTo=0,reserveFrom=0;
+    let incomeReal=0,incomeProv=0,expReal=0,expProv=0,fixed=0,dailyOut=0,reserveTo=0,reserveFrom=0,cardPurchases=0,invoicesDue=0,invoicesPaid=0;
 
     for(let d=1;d<=daysInMonth(m);d++){
       const items=txDay(m,d);
@@ -680,118 +733,80 @@ function buildCashModel(){
       expProv+=sum(expenses.filter(t=>t.status==='provisioned').map(t=>t.value));
       fixed+=sum(expenses.filter(t=>t.nature==='fixed').map(t=>t.value));
       dailyOut+=sum(expenses.filter(t=>t.nature==='daily').map(t=>t.value));
+      cardPurchases+=sum(cardPurchasesDay(m,d).map(p=>p.value));
+
+      const dueGroups=invoiceGroupsForDay(m,d);
+      const dueAmount=sum(dueGroups.map(i=>i.amount));
+      invoicesDue+=dueAmount;
+      projected-=dueAmount;
+
+      const paidGroups=paidInvoiceGroupsOnDay(m,d);
+      const paidAmount=sum(paidGroups.map(i=>i.amount));
+      invoicesPaid+=paidAmount;
+      real-=paidAmount;
 
       const transfers=reserveDay(m,d);
       transfers.forEach(t=>{
         const signed=t.direction==='to_reserve'?Number(t.value):-Number(t.value);
-        reserveProjected+=signed;
-        projected-=signed;
-
-        if(t.status==='realized'){
-          reserveReal+=signed;
-          real-=signed
-        }
-
-        if(t.direction==='to_reserve')reserveTo+=Number(t.value);
-        else reserveFrom+=Number(t.value)
+        reserveProjected+=signed;projected-=signed;
+        if(t.status==='realized'){reserveReal+=signed;real-=signed}
+        if(t.direction==='to_reserve')reserveTo+=Number(t.value);else reserveFrom+=Number(t.value)
       });
 
-      if(testDraft&&testDraft.year===currentYear&&testDraft.month===m&&testDraft.day===d){
-        const draftValue=Number(testDraft.value||0);
-        projected+=testDraft.type==='income'?draftValue:-draftValue
-      }
+      if(testDraft&&testDraft.year===currentYear&&testDraft.month===m&&testDraft.day===d){const draftValue=Number(testDraft.value||0);projected+=testDraft.type==='income'?draftValue:-draftValue}
 
-      daily.push({
-        month:m,day:d,projected,real,reserveProjected,reserveReal,
-        netWorthProjected:projected+reserveProjected,
-        netWorthReal:real+reserveReal
-      })
+      daily.push({month:m,day:d,projected,real,reserveProjected,reserveReal,netWorthProjected:projected+reserveProjected,netWorthReal:real+reserveReal});
     }
 
-    monthStats.push({
-      startProjected,startReal,reserveStartProjected,reserveStartReal,
-      incomeReal,incomeProv,expReal,expProv,fixed,daily:dailyOut,
-      reserveTo,reserveFrom,
-      endProjected:projected,endReal:real,
-      reserveEndProjected:reserveProjected,reserveEndReal:reserveReal,
-      netWorthProjected:projected+reserveProjected,
-      netWorthReal:real+reserveReal
-    })
+    monthStats.push({startProjected,startReal,reserveStartProjected,reserveStartReal,incomeReal,incomeProv,expReal,expProv,fixed,daily:dailyOut,reserveTo,reserveFrom,cardPurchases,invoicesDue,invoicesPaid,endProjected:projected,endReal:real,reserveEndProjected:reserveProjected,reserveEndReal:reserveReal,netWorthProjected:projected+reserveProjected,netWorthReal:real+reserveReal});
   }
-
   return {daily,monthStats}
 }
 function modelDay(model,m,d){return model.daily.find(x=>x.month===m&&x.day===d)}
 function balanceClass(value,simulated){let c=value<0?'balance-negative':value<warningThreshold?'balance-warning':'balance-positive';if(simulated)c+=' balance-simulated';return c}
 function entryClass(items,type){if(!items.length)return 'entry-cell';const hasProv=items.some(t=>t.status==='provisioned');return `${type==='income'?'real-in':'real-out'} ${hasProv?'provisioned':''}`}
 
-function renderAll(){applyScopeUI();buildAnnualTable();renderSelectedMonth();renderTestBar();$('#yearLabel').textContent=currentYear;$('#openingBalance').value=yearOpeningBalance;$('#warningThreshold').value=warningThreshold}
+function renderAll(){buildAnnualTable();renderSelectedMonth();renderCards();renderTestBar();$('#yearLabel').textContent=currentYear;$('#openingBalance').value=yearOpeningBalance;$('#warningThreshold').value=warningThreshold}
 
 function buildAnnualTable(){
   const model=buildCashModel(),table=$('#annualTable');let cols='',h1='<tr class="month-head">',h2='<tr class="sub-head">';
-  for(let m=0;m<12;m++){
-    cols+='<col class="date"><col class="money"><col class="money"><col class="money"><col class="reserve"><col class="money">';
-    h1+=`<th colspan="6" data-month="${m}" class="${m===selectedMonth?'selected':''} month-end">${MONTHS[m]}</th>`;
-    h2+=financeScope==='pj'
-      ?'<th class="date-col">Data</th><th>Receita</th><th>Despesa</th><th>Variável</th><th>Reserva</th><th class="month-end">Caixa</th>'
-      :'<th class="date-col">Data</th><th>Entrada</th><th>Saída</th><th>Diário</th><th>Reserva</th><th class="month-end">Saldo</th>'
-  }
+  for(let m=0;m<12;m++){cols+='<col class="date"><col class="money"><col class="money"><col class="money"><col class="cardcol"><col class="reserve"><col class="money">';h1+=`<th colspan="7" data-month="${m}" class="${m===selectedMonth?'selected':''} month-end">${MONTHS[m]}</th>`;h2+='<th class="date-col">Data</th><th>Entrada</th><th>Saída</th><th>Diário</th><th class="card-head">Cartão</th><th>Reserva</th><th class="month-end">Saldo</th>'}
   h1+='</tr>';h2+='</tr>';let body='<tbody>';
   for(let d=1;d<=31;d++){
     body+='<tr>';
     for(let m=0;m<12;m++){
-      if(d>daysInMonth(m)){body+='<td class="date-col"></td><td></td><td></td><td></td><td></td><td class="month-end"></td>';continue}
+      if(d>daysInMonth(m)){body+='<td class="date-col"></td><td></td><td></td><td></td><td></td><td></td><td class="month-end"></td>';continue}
       const items=txDay(m,d),incomes=items.filter(t=>t.type==='income'),fixed=items.filter(t=>t.type==='expense'&&t.nature==='fixed'),daily=items.filter(t=>t.type==='expense'&&t.nature==='daily');
-      const transfers=reserveDay(m,d);
+      const transfers=reserveDay(m,d),purchases=cardPurchasesDay(m,d),dueGroups=invoiceGroupsForDay(m,d);
       const income=sum(incomes.map(t=>t.value)),fixedValue=sum(fixed.map(t=>t.value)),dailyValue=sum(daily.map(t=>t.value)),point=modelDay(model,m,d),simulated=draftApplies(m,d);
       const reserveNet=sum(transfers.map(t=>t.direction==='to_reserve'?Number(t.value):-Number(t.value)));
-      const incomeDraft=draftOnCell(m,d,'income');
-      const fixedDraft=draftOnCell(m,d,'expense','fixed');
-      const dailyDraft=draftOnCell(m,d,'expense','daily');
-      const hasAny=items.length||transfers.length;
+      const cardBought=sum(purchases.map(p=>p.value)),invoiceDue=sum(dueGroups.map(i=>i.amount));
+      const incomeDraft=draftOnCell(m,d,'income'),fixedDraft=draftOnCell(m,d,'expense','fixed'),dailyDraft=draftOnCell(m,d,'expense','daily');
+      const hasAny=items.length||transfers.length||purchases.length||dueGroups.length;
+      let cardText='';if(cardBought&&invoiceDue)cardText=`${BRL.format(cardBought)} · fatura ${BRL.format(invoiceDue)}`;else if(invoiceDue)cardText=`fatura ${BRL.format(invoiceDue)}`;else if(cardBought)cardText=BRL.format(cardBought);
       body+=`<td class="date-col ${hasAny?'date-click':''}" data-month="${m}" data-day="${d}">${d}</td>
-        <td class="entry-cell ${incomes.length?'has-entry ':''}${entryClass(incomes,'income')}" data-cell-month="${m}" data-cell-day="${d}" data-cell-type="income" data-has-entry="${incomes.length?'1':'0'}" title="${incomes.length?'Abrir lançamento':'Lançar entrada'}">${incomeDraft?`<input class="inline-test-input" data-inline-test value="${testDraft.value||''}" inputmode="decimal">`:income?BRL.format(income):''}</td>
-        <td class="entry-cell ${fixed.length?'has-entry ':''}${entryClass(fixed,'expense')}" data-cell-month="${m}" data-cell-day="${d}" data-cell-type="expense" data-cell-nature="fixed" data-has-entry="${fixed.length?'1':'0'}" title="${fixed.length?'Abrir lançamento':'Lançar saída'}">${fixedDraft?`<input class="inline-test-input" data-inline-test value="${testDraft.value||''}" inputmode="decimal">`:fixedValue?BRL.format(fixedValue):''}</td>
-        <td class="entry-cell ${daily.length?'has-entry ':''}${entryClass(daily,'expense')}" data-cell-month="${m}" data-cell-day="${d}" data-cell-type="expense" data-cell-nature="daily" data-has-entry="${daily.length?'1':'0'}" title="${daily.length?'Abrir lançamento':'Lançar diário'}">${dailyDraft?`<input class="inline-test-input" data-inline-test value="${testDraft.value||''}" inputmode="decimal">`:dailyValue?BRL.format(dailyValue):''}</td>
-        <td class="entry-cell reserve-move ${transfers.length?'has-entry ':''}${transfers.some(t=>t.status==='provisioned')?'provisioned':''}" data-reserve-month="${m}" data-reserve-day="${d}" data-has-reserve="${transfers.length?'1':'0'}" title="${transfers.length?'Abrir transferência':'Guardar ou resgatar'}">${reserveNet?`${reserveNet>0?'↗':'↙'} ${BRL.format(Math.abs(reserveNet))}`:''}</td>
+        <td class="entry-cell ${incomes.length?'has-entry ':''}${entryClass(incomes,'income')}" data-cell-month="${m}" data-cell-day="${d}" data-cell-type="income" data-has-entry="${incomes.length?'1':'0'}">${incomeDraft?`<input class="inline-test-input" data-inline-test value="${testDraft.value||''}" inputmode="decimal">`:income?BRL.format(income):''}</td>
+        <td class="entry-cell ${fixed.length?'has-entry ':''}${entryClass(fixed,'expense')}" data-cell-month="${m}" data-cell-day="${d}" data-cell-type="expense" data-cell-nature="fixed" data-has-entry="${fixed.length?'1':'0'}">${fixedDraft?`<input class="inline-test-input" data-inline-test value="${testDraft.value||''}" inputmode="decimal">`:fixedValue?BRL.format(fixedValue):''}</td>
+        <td class="entry-cell ${daily.length?'has-entry ':''}${entryClass(daily,'expense')}" data-cell-month="${m}" data-cell-day="${d}" data-cell-type="expense" data-cell-nature="daily" data-has-entry="${daily.length?'1':'0'}">${dailyDraft?`<input class="inline-test-input" data-inline-test value="${testDraft.value||''}" inputmode="decimal">`:dailyValue?BRL.format(dailyValue):''}</td>
+        <td class="card-purchase ${invoiceDue?'invoice-due':''}" data-card-month="${m}" data-card-day="${d}" data-has-card="${purchases.length||dueGroups.length?'1':'0'}" title="${invoiceDue?'Vencimento de fatura':'Compra no cartão — não reduz o caixa hoje'}">${cardText}</td>
+        <td class="entry-cell reserve-move ${transfers.length?'has-entry ':''}${transfers.some(t=>t.status==='provisioned')?'provisioned':''}" data-reserve-month="${m}" data-reserve-day="${d}" data-has-reserve="${transfers.length?'1':'0'}">${reserveNet?`${reserveNet>0?'↗':'↙'} ${BRL.format(Math.abs(reserveNet))}`:''}</td>
         <td class="month-end ${balanceClass(point.projected,simulated)}">${BRL.format(point.projected)}</td>`;
     }
     body+='</tr>';
   }
   body+='</tbody>';let foot='<tfoot><tr class="month-footer">';
-  model.monthStats.forEach(t=>{const reserveNet=t.reserveTo-t.reserveFrom;foot+=`<td class="date-col">total</td><td>${t.incomeReal+t.incomeProv?BRL.format(t.incomeReal+t.incomeProv):''}</td><td>${t.fixed?BRL.format(t.fixed):''}</td><td>${t.daily?BRL.format(t.daily):''}</td><td>${reserveNet?`${reserveNet>0?'↗':'↙'} ${BRL.format(Math.abs(reserveNet))}`:''}</td><td class="month-end ${balanceClass(t.endProjected,false)}">${BRL.format(t.endProjected)}</td>`});
+  model.monthStats.forEach(t=>{const reserveNet=t.reserveTo-t.reserveFrom;foot+=`<td class="date-col">total</td><td>${t.incomeReal+t.incomeProv?BRL.format(t.incomeReal+t.incomeProv):''}</td><td>${t.fixed?BRL.format(t.fixed):''}</td><td>${t.daily?BRL.format(t.daily):''}</td><td class="card-purchase">${t.cardPurchases?BRL.format(t.cardPurchases):''}</td><td>${reserveNet?`${reserveNet>0?'↗':'↙'} ${BRL.format(Math.abs(reserveNet))}`:''}</td><td class="month-end ${balanceClass(t.endProjected,false)}">${BRL.format(t.endProjected)}</td>`});
   foot+='</tr></tfoot>';table.innerHTML=`<colgroup>${cols}</colgroup><thead>${h1}${h2}</thead>${body}${foot}`;
   table.querySelectorAll('.month-head th').forEach(th=>th.addEventListener('click',()=>{selectedMonth=Number(th.dataset.month);renderAll()}));
   table.querySelectorAll('.date-click').forEach(td=>td.addEventListener('click',()=>openDrawer(Number(td.dataset.month),Number(td.dataset.day))));
-  table.querySelectorAll('[data-cell-month]').forEach(td=>td.addEventListener('click',e=>{
-    if(e.target.matches('[data-inline-test]'))return;
-
-    const month=Number(td.dataset.cellMonth);
-    const day=Number(td.dataset.cellDay);
-
-    if(td.dataset.hasEntry==='1'){
-      openDrawer(month,day);
-      return;
-    }
-
-    beginInlineTest(
-      month,
-      day,
-      td.dataset.cellType,
-      td.dataset.cellNature||null
-    )
-  }));
-  table.querySelectorAll('[data-reserve-month]').forEach(td=>td.addEventListener('click',()=>{
-    const month=Number(td.dataset.reserveMonth),day=Number(td.dataset.reserveDay);
-    if(td.dataset.hasReserve==='1')openDrawer(month,day);
-    else openReserveTransferModal('to_reserve',month,day)
-  }));
-  const input=table.querySelector('[data-inline-test]');
-  if(input){input.focus();input.select();input.addEventListener('input',()=>{testDraft.value=Math.max(0,Number(input.value.replace(',','.'))||0);renderPreviewWithoutReplacingInput()});input.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();discardTest()}if(e.key==='Enter'){e.preventDefault();openSaveTestModal()}})}
+  table.querySelectorAll('[data-cell-month]').forEach(td=>td.addEventListener('click',e=>{if(e.target.matches('[data-inline-test]'))return;const month=Number(td.dataset.cellMonth),day=Number(td.dataset.cellDay);if(td.dataset.hasEntry==='1'){openDrawer(month,day);return}beginInlineTest(month,day,td.dataset.cellType,td.dataset.cellNature||null)}));
+  table.querySelectorAll('[data-card-month]').forEach(td=>td.addEventListener('click',()=>{const month=Number(td.dataset.cardMonth),day=Number(td.dataset.cardDay);if(td.dataset.hasCard==='1')openDrawer(month,day);else openCardPurchase(null,month,day)}));
+  table.querySelectorAll('[data-reserve-month]').forEach(td=>td.addEventListener('click',()=>{const month=Number(td.dataset.reserveMonth),day=Number(td.dataset.reserveDay);if(td.dataset.hasReserve==='1')openDrawer(month,day);else openReserveTransferModal('to_reserve',month,day)}));
+  const input=table.querySelector('[data-inline-test]');if(input){input.focus();input.select();input.addEventListener('input',()=>{testDraft.value=Math.max(0,Number(input.value.replace(',','.'))||0);renderPreviewWithoutReplacingInput()});input.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();discardTest()}if(e.key==='Enter'){e.preventDefault();openSaveTestModal()}})}
 }
 
 function renderPreviewWithoutReplacingInput(){
-  const model=buildCashModel();document.querySelectorAll('.annual-table tbody tr').forEach((tr,rowIndex)=>{const day=rowIndex+1,cells=[...tr.children];for(let m=0;m<12;m++){const balanceCell=cells[m*6+5];if(!balanceCell||day>daysInMonth(m))continue;const point=modelDay(model,m,day);balanceCell.textContent=BRL.format(point.projected);balanceCell.className=`month-end ${balanceClass(point.projected,draftApplies(m,day))}`}});renderSelectedMonth();renderTestBar()
+  const model=buildCashModel();document.querySelectorAll('.annual-table tbody tr').forEach((tr,rowIndex)=>{const day=rowIndex+1,cells=[...tr.children];for(let m=0;m<12;m++){const balanceCell=cells[m*7+6];if(!balanceCell||day>daysInMonth(m))continue;const point=modelDay(model,m,day);balanceCell.textContent=BRL.format(point.projected);balanceCell.className=`month-end ${balanceClass(point.projected,draftApplies(m,day))}`}});renderSelectedMonth();renderTestBar()
 }
 function beginInlineTest(month,day,type,nature=null){
   testDraft={year:currentYear,month,day,type,nature,value:0};
@@ -804,94 +819,71 @@ $('#discardTest').addEventListener('click',discardTest);
 function renderTestBar(){const bar=$('#testBar'),status=$('#simulationStatus');if(!testDraft){bar.classList.remove('visible');status.classList.remove('visible');return}status.classList.add('visible');bar.classList.add('visible');const kind=testDraft.type==='income'?'Entrada':testDraft.nature==='daily'?'Diário':'Saída';
   $('#testCopy').innerHTML=`Teste: <strong>${BRL.format(Number(testDraft.value||0))}</strong> em ${testDraft.day} de ${MONTHS[testDraft.month].toLowerCase()} · ${kind}. As células à frente já mostram o impacto.`}
 
-function applyScopeUI(){
-  const pj=financeScope==='pj';
-
-  $('#scopeKicker').textContent=pj?'Fluxo de caixa da empresa':'Fluxo de caixa pessoal';
-  $('#scopeName').textContent=pj?'Pessoa Jurídica':'Pessoa Física';
-  document.querySelectorAll('[data-finance-scope]').forEach(button=>button.classList.toggle('active',button.dataset.financeScope===financeScope));
-
-  $('#scopeHeadline').textContent=pj
-    ?'Receitas, despesas e reservas da empresa ficam separadas da sua vida pessoal.'
-    :'Clique em Entrada, Saída ou Diário para lançar e testar valores. A coluna Reserva tira dinheiro do disponível sem transformar isso em gasto.';
-
-  $('#addIncome').textContent=pj?'+ receita':'+ entrada';
-  $('#addExpense').textContent=pj?'+ despesa':'+ gasto';
-  $('#addReserve').textContent=pj?'↗ separar caixa':'↗ guardar';
-
-  $('#mRealLabel').textContent=pj?'Caixa disponível':'Saldo disponível';
-  $('#mProjectedLabel').textContent=pj?'Caixa projetado':'Saldo projetado';
-  $('#mReservesLabel').textContent=pj?'Valores reservados':'Reservas e investimentos';
-  $('#mNetWorthLabel').textContent=pj?'Patrimônio da PJ':'Patrimônio financeiro';
-  $('#openingBalanceLabel').textContent=pj?'Caixa inicial do ano':'Saldo inicial do ano';
-
-  $('#budgetTitle').textContent=pj?'Custos e limites da empresa':'Limites por categoria';
-  $('#budgetCopy').textContent=pj
-    ?'Categorias próprias da PJ, sem misturar com o orçamento pessoal.'
-    :'O orçamento continua separado da grade para ela permanecer limpa.';
-  $('#summaryCopy').textContent=pj
-    ?'Resumo exclusivo da operação da empresa.'
-    :'O teste afeta apenas a projeção até você decidir salvá-lo.';
-
-  $('#modalHelper').textContent='Provisionado afeta a projeção. Realizado afeta também o saldo atual.'
-}
-
 function renderSelectedMonth(){
   const model=buildCashModel(),t=model.monthStats[selectedMonth];
-  $('#mMonth').textContent=MONTHS[selectedMonth];
-  $('#mReal').textContent=BRL.format(t.endReal);
-  $('#mProjected').textContent=BRL.format(t.endProjected);
-  $('#mProjected').className=t.endProjected<0?'bad':t.endProjected<warningThreshold?'warn':'';
-  const allowedKeys=financeScope==='pj'?['pj-tax','pj-operating']:['emergency','treasury-2029','treasury-2032'];
-  const scopedAssets=investmentAccounts.filter(a=>allowedKeys.includes(a.systemKey));
-  const investmentCurrent=sum(scopedAssets.map(a=>Number(a.currentValue||0)));
-  const investmentContributed=sum(scopedAssets.map(a=>Number(a.contributed||0)));
-  $('#mReserves').textContent=BRL.format(investmentCurrent);
-  $('#mReservesSub').textContent=financeScope==='pj'?`${BRL.format(investmentContributed)} separados`:`${BRL.format(investmentContributed)} aportados`;
-  $('#mNetWorth').textContent=BRL.format(t.endReal+investmentCurrent);
-  $('#mNetWorthSub').textContent=financeScope==='pj'?'caixa + valores reservados':'disponível + posição atual';
-  $('#budgetMonth').textContent=MONTHS[selectedMonth];
-  $('#summaryMonth').textContent=MONTHS[selectedMonth];
-  $('#sIncome').textContent=BRL.format(t.incomeReal);
-  $('#sRealExpenses').textContent=BRL.format(t.expReal);
-  $('#sProvExpenses').textContent=BRL.format(t.expProv);
-  $('#sPerformance').textContent=BRL.format(t.incomeReal-t.expReal);
-  $('#sProjected').textContent=BRL.format(t.endProjected);
-  renderBudgets();
-  renderReserves(model)
+  $('#mMonth').textContent=MONTHS[selectedMonth];$('#mReal').textContent=BRL.format(t.endReal);$('#mProjected').textContent=BRL.format(t.endProjected);$('#mProjected').className=t.endProjected<0?'bad':t.endProjected<warningThreshold?'warn':'';
+  $('#mCardPurchases').textContent=BRL.format(t.cardPurchases);$('#mInvoices').textContent=BRL.format(t.invoicesDue);
+  const officialInvestments=investmentAccounts.filter(a=>['emergency','treasury-2029','treasury-2032'].includes(a.systemKey));const investmentCurrent=sum(officialInvestments.map(a=>Number(a.currentValue||0)));const investmentContributed=sum(officialInvestments.map(a=>Number(a.contributed||0)));
+  $('#mReserves').textContent=BRL.format(investmentCurrent);$('#mReservesSub').textContent=`${BRL.format(investmentContributed)} aportados`;$('#mNetWorth').textContent=BRL.format(t.endReal+investmentCurrent);$('#mNetWorthSub').textContent='disponível + posição atual';
+  $('#budgetMonth').textContent=MONTHS[selectedMonth];$('#summaryMonth').textContent=MONTHS[selectedMonth];$('#cardMonth').textContent=MONTHS[selectedMonth];
+  $('#sIncome').textContent=BRL.format(t.incomeReal);$('#sRealExpenses').textContent=BRL.format(t.expReal);$('#sCardPurchases').textContent=BRL.format(t.cardPurchases);$('#sInvoices').textContent=BRL.format(t.invoicesDue);$('#sProvExpenses').textContent=BRL.format(t.expProv);$('#sPerformance').textContent=BRL.format(t.incomeReal-t.expReal-t.invoicesPaid);$('#sProjected').textContent=BRL.format(t.endProjected);
+  renderBudgets();renderReserves(model)
 }
 
 function renderBudgets(){
-  const box=$('#budgetRows');
-  box.innerHTML='';
-
+  const box=$('#budgetRows');box.innerHTML='';
   categories.forEach(cat=>{
-    const tx=txMonth(selectedMonth).filter(t=>t.type==='expense'&&t.category===cat.id);
-    const real=sum(tx.filter(t=>t.status==='realized').map(t=>t.value));
-    const prov=sum(tx.filter(t=>t.status==='provisioned').map(t=>t.value));
-    const budget=budgetAmount(selectedMonth,cat.id);
-    const recurring=recurringCommitment(cat.id);
-    const activeRules=recurringRulesForCategory(cat.id).filter(r=>ruleAppliesToMonth(r,currentYear,selectedMonth)).length;
-    const used=real+prov;
-    const available=budget-used;
-    const pct=budget?Math.min(100,(used/budget)*100):0;
-
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>
-      <button class="budget-open" type="button" data-budget-category="${cat.id}">
-        <div class="budget-name">${escapeHtml(cat.name)}</div>
-        ${activeRules?`<div class="budget-recurring-note">${activeRules} recorrência${activeRules===1?'':'s'} · ${BRL.format(recurring)}/mês</div>`:''}
-        <div class="budget-bar"><div class="budget-fill ${available<0?'over':''}" style="width:${pct}%"></div></div>
-      </button>
-    </td>
-    <td>${BRL.format(budget)}</td>
-    <td>${BRL.format(real)}</td>
-    <td>${BRL.format(prov)}</td>
-    <td class="${available<0?'bad':'good'}">${BRL.format(available)}</td>`;
-
-    tr.querySelector('[data-budget-category]').addEventListener('click',()=>openBudgetDetail(cat.id));
-    box.appendChild(tr)
+    const tx=txMonth(selectedMonth).filter(t=>t.type==='expense'&&t.category===cat.id);const directReal=sum(tx.filter(t=>t.status==='realized').map(t=>t.value));const prov=sum(tx.filter(t=>t.status==='provisioned').map(t=>t.value));const card=cardPurchaseCategoryTotal(selectedMonth,cat.id);const real=directReal+card;const budget=budgetAmount(selectedMonth,cat.id);const recurring=recurringCommitment(cat.id);const activeRules=recurringRulesForCategory(cat.id).filter(r=>ruleAppliesToMonth(r,currentYear,selectedMonth)).length;const used=real+prov;const available=budget-used;const pct=budget?Math.min(100,(used/budget)*100):0;
+    const tr=document.createElement('tr');tr.innerHTML=`<td><button class="budget-open" type="button" data-budget-category="${cat.id}"><div class="budget-name">${escapeHtml(cat.name)}${card?`<span class="budget-card-note">cartão ${BRL.format(card)}</span>`:''}</div>${activeRules?`<div class="budget-recurring-note">${activeRules} recorrência${activeRules===1?'':'s'} · ${BRL.format(recurring)}/mês</div>`:''}<div class="budget-bar"><div class="budget-fill ${available<0?'over':''}" style="width:${pct}%"></div></div></button></td><td>${BRL.format(budget)}</td><td>${BRL.format(real)}</td><td>${BRL.format(prov)}</td><td class="${available<0?'bad':'good'}">${BRL.format(available)}</td>`;
+    tr.querySelector('[data-budget-category]').addEventListener('click',()=>openBudgetDetail(cat.id));box.appendChild(tr)
   })
+}
+
+function invoiceDueDateForCard(card,year,month){return new Date(year,month,Math.min(Number(card.dueDay),new Date(year,month+1,0).getDate()))}
+function renderCards(){
+  const grid=$('#cardsGrid');if(!grid)return;grid.innerHTML='';
+  creditCards.forEach(card=>{
+    const due=invoiceDueDateForCard(card,currentYear,selectedMonth),current=invoiceTotal(card.id,currentYear,selectedMonth),state=invoiceState(card.id,due),paid=state.status==='paid';
+    const nextMonth=(selectedMonth+1)%12,nextYear=currentYear+(selectedMonth===11?1:0),next=invoiceTotal(card.id,nextYear,nextMonth),closeDate=new Date(currentYear,selectedMonth,Math.min(card.closingDay,daysInMonth(selectedMonth)));
+    const el=document.createElement('article');el.className='credit-card';
+    el.innerHTML=`<div class="credit-card-head"><div><div class="credit-card-name">${escapeHtml(card.name)}</div><div class="credit-card-cycle">fecha dia ${card.closingDay} · vence dia ${card.dueDay}</div></div><span class="card-pill">crédito</span></div><div class="invoice-values"><div class="invoice-value"><span>Fatura de ${MONTHS[selectedMonth].slice(0,3).toLowerCase()}</span><b>${BRL.format(current)}</b><small>vence ${due.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}</small></div><div class="invoice-value"><span>Próxima fatura</span><b>${BRL.format(next)}</b><small>${MONTHS[nextMonth].toLowerCase()}</small></div></div><div class="card-progress"><i style="width:${Math.min(100,current/3000*100)}%"></i></div><div class="card-footer"><span class="invoice-status ${paid?'paid':''}"><i></i>${current?paid?'paga':'em aberto':'sem lançamentos'}</span><div style="display:flex;gap:9px">${current?`<button class="card-link" type="button" data-toggle-invoice="${card.id}" data-due="${localDateKey(due)}" data-paid="${paid?'1':'0'}">${paid?'reabrir':'marcar paga'}</button>`:''}<button class="card-link" type="button" data-edit-card="${card.id}">configurar</button></div></div>`;
+    grid.appendChild(el)
+  });
+  const plus=document.createElement('article');plus.className='credit-card placeholder';plus.textContent='+ adicionar cartão';plus.addEventListener('click',openCardManager);grid.appendChild(plus);
+  grid.querySelectorAll('[data-edit-card]').forEach(b=>b.addEventListener('click',openCardManager));
+  grid.querySelectorAll('[data-toggle-invoice]').forEach(b=>b.addEventListener('click',()=>toggleInvoiceState(b.dataset.toggleInvoice,b.dataset.due,b.dataset.paid==='1')))
+}
+
+async function toggleInvoiceState(card,dueDate,currentlyPaid){
+  let paidDate=null,status=currentlyPaid?'open':'paid';
+  if(status==='paid'){paidDate=prompt('Data do pagamento da fatura (AAAA-MM-DD):',localDateKey(new Date()));if(!paidDate)return}
+  try{await api('/api/finance/card-invoice',{method:'PUT',body:JSON.stringify({card,dueDate,status,paidDate})});await loadYear(currentYear,false)}catch(e){showError(e.message)}
+}
+
+const cardPurchaseBackdrop=$('#cardPurchaseBackdrop'),cardManagerBackdrop=$('#cardManagerBackdrop');
+function populateCardPurchaseSelects(){
+  $('#pCard').innerHTML=creditCards.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+  $('#pCategory').innerHTML=categories.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+  $('#pInstallments').innerHTML=Array.from({length:36},(_,i)=>`<option value="${i+1}">${i+1}x</option>`).join('')
+}
+function openCardPurchase(p=null,month=selectedMonth,day=''){
+  if(!creditCards.length){openCardManager();return}
+  editingCardPurchaseId=p?.id||null;populateCardPurchaseSelects();
+  $('#cardPurchaseTitle').textContent=p?'Editar compra no cartão':'Nova compra no cartão';$('#cardPurchaseKicker').textContent=p?'Crédito · edição':'Crédito';
+  const defaultDay=day||Math.min(new Date().getDate(),daysInMonth(month));$('#pDate').value=p?.date||`${currentYear}-${String(month+1).padStart(2,'0')}-${String(defaultDay).padStart(2,'0')}`;
+  $('#pCard').value=p?.card||creditCards[0]?.id||'';$('#pCategory').value=p?.category||categories[0]?.id||'';$('#pValue').value=p?.value||'';$('#pInstallments').value=String(p?.installments||1);$('#pDescription').value=p?.description||'';updateCardPurchasePreview();$('#dayDrawer').classList.remove('open');cardPurchaseBackdrop.classList.add('open')
+}
+function updateCardPurchasePreview(){
+  const date=$('#pDate').value,card=$('#pCard').value,value=Number($('#pValue').value||0),installments=Number($('#pInstallments').value||1);if(!date||!card){$('#invoicePreview').textContent='Selecione a data e o cartão.';return}
+  const p={date,card,value,installments};const first=cardDueDateForPurchase(p,0);$('#invoicePreview').textContent=first?`${installments}x de ${BRL.format(value/installments)} · 1ª parcela na fatura com vencimento em ${first.toLocaleDateString('pt-BR')}`:'Confira os dados do cartão.'
+}
+async function deleteCardPurchase(p){if(!confirm('Excluir esta compra no cartão? As parcelas correspondentes deixarão de compor as faturas.'))return;try{await api(`/api/finance/card-purchases/${encodeURIComponent(p.id)}`,{method:'DELETE'});$('#dayDrawer').classList.remove('open');await loadYear(currentYear,false)}catch(e){showError(e.message)}}
+function openCardManager(){renderCardManager();cardManagerBackdrop.classList.add('open')}
+function renderCardManager(){
+  const box=$('#cardManagerList');box.innerHTML='';$('#cardManagerError').textContent='';
+  creditCards.forEach(card=>{const row=document.createElement('div');row.className='manage-row';row.innerHTML=`<div class="field"><label>Cartão</label><input value="${escapeHtml(card.name)}" data-card-name="${card.id}"></div><div class="field"><label>Fecha dia</label><input type="number" min="1" max="31" value="${card.closingDay}" data-card-close="${card.id}"></div><div class="field"><label>Vence dia</label><input type="number" min="1" max="31" value="${card.dueDay}" data-card-due="${card.id}"></div><button type="button" data-save-card="${card.id}">salvar</button><button type="button" data-delete-card="${card.id}" style="color:#714d58">remover</button>`;box.appendChild(row)});
+  box.querySelectorAll('[data-save-card]').forEach(b=>b.addEventListener('click',async()=>{const id=b.dataset.saveCard;try{await api(`/api/finance/cards/${encodeURIComponent(id)}`,{method:'PUT',body:JSON.stringify({name:box.querySelector(`[data-card-name="${id}"]`).value,closingDay:Number(box.querySelector(`[data-card-close="${id}"]`).value),dueDay:Number(box.querySelector(`[data-card-due="${id}"]`).value)})});await loadYear(currentYear,false);renderCardManager()}catch(e){$('#cardManagerError').textContent=e.message}}));
+  box.querySelectorAll('[data-delete-card]').forEach(b=>b.addEventListener('click',async()=>{if(!confirm('Remover este cartão das opções? As compras antigas continuarão no histórico.'))return;try{await api(`/api/finance/cards/${encodeURIComponent(b.dataset.deleteCard)}`,{method:'DELETE'});await loadYear(currentYear,false);renderCardManager()}catch(e){$('#cardManagerError').textContent=e.message}}))
 }
 
 function openDrawer(month,day){
@@ -899,6 +891,8 @@ function openDrawer(month,day){
   renderSelectedMonth();
   const txs=txDay(month,day);
   const transfers=reserveDay(month,day);
+  const cardPurchases=cardPurchasesDay(month,day);
+  const dueInvoices=invoiceGroupsForDay(month,day);
   $('#drawerTitle').textContent=`${day} de ${MONTHS[month].toLowerCase()}`;
   const list=$('#drawerList');
   list.innerHTML='';
@@ -911,6 +905,20 @@ function openDrawer(month,day){
     div.querySelector('.edit').addEventListener('click',()=>openEditModal(t));
     div.querySelector('.delete').addEventListener('click',()=>deleteTransaction(t));
     list.appendChild(div)
+  });
+
+
+  cardPurchases.forEach(p=>{
+    const div=document.createElement('div');div.className='mov card-mov';
+    div.innerHTML=`<div class="mov-top"><span class="mov-title">${escapeHtml(p.description||'Compra no cartão')}<span class="card-purchase-badge">${escapeHtml(cardName(p.card))}</span></span><span class="mov-value card-color">${BRL.format(p.value)}</span></div><div class="mov-meta">Cartão · ${escapeHtml(categoryName(p.category))} · ${p.installments}x · entra no orçamento hoje, não no caixa</div><div class="mov-actions"><button type="button" class="mov-action edit">Editar</button><button type="button" class="mov-action delete">Excluir</button></div>`;
+    div.querySelector('.edit').addEventListener('click',()=>openCardPurchase(p));div.querySelector('.delete').addEventListener('click',()=>deleteCardPurchase(p));list.appendChild(div)
+  });
+
+  dueInvoices.forEach(inv=>{
+    const state=invoiceState(inv.card,inv.dueDate),paid=state.status==='paid';
+    const div=document.createElement('div');div.className='mov card-mov';
+    div.innerHTML=`<div class="mov-top"><span class="mov-title">Fatura · ${escapeHtml(cardName(inv.card))}</span><span class="mov-value card-color">- ${BRL.format(inv.amount)}</span></div><div class="mov-meta">Vencimento ${inv.date.toLocaleDateString('pt-BR')} · ${paid?`paga em ${parseLocalDate(state.paidDate)?.toLocaleDateString('pt-BR')||state.paidDate}`:'em aberto · já considerada no saldo projetado'}</div><div class="mov-actions"><button type="button" class="mov-action invoice-toggle">${paid?'Reabrir fatura':'Marcar como paga'}</button></div>`;
+    div.querySelector('.invoice-toggle').addEventListener('click',()=>toggleInvoiceState(inv.card,inv.dueDate,paid));list.appendChild(div)
   });
 
   transfers.forEach(t=>{
@@ -976,20 +984,15 @@ function renderBudgetDetail(){
   const monthItems=txMonth(selectedMonth)
     .filter(t=>t.type==='expense'&&t.category===selectedBudgetCategory)
     .sort((a,b)=>a.day-b.day||String(a.description).localeCompare(String(b.description),'pt-BR'));
+  const cardItems=cardPurchasesMonth(selectedMonth).filter(p=>p.category===selectedBudgetCategory).sort((a,b)=>parseLocalDate(a.date)-parseLocalDate(b.date));
 
-  if(!monthItems.length){
+  if(!monthItems.length&&!cardItems.length){
     monthBox.innerHTML='<div class="empty-detail">Nenhum lançamento nesta categoria neste mês.</div>'
   }else{
     monthItems.forEach(t=>{
-      const row=document.createElement('div');
-      row.className='detail-row';
-      row.innerHTML=`<div>
-        <div class="detail-row-title">${escapeHtml(t.description||'Saída')}${t.recurringRuleId?'<span class="recurring-badge">recorrente</span>':''}</div>
-        <div class="detail-row-meta">dia ${t.day} · ${t.status==='realized'?'realizado':'provisionado'}</div>
-      </div>
-      <div class="detail-row-value">${BRL.format(t.value)}</div>`;
-      monthBox.appendChild(row)
-    })
+      const row=document.createElement('div');row.className='detail-row';row.innerHTML=`<div><div class="detail-row-title">${escapeHtml(t.description||'Saída')}${t.recurringRuleId?'<span class="recurring-badge">recorrente</span>':''}</div><div class="detail-row-meta">dia ${t.day} · ${t.status==='realized'?'realizado':'provisionado'}</div></div><div class="detail-row-value">${BRL.format(t.value)}</div>`;monthBox.appendChild(row)
+    });
+    cardItems.forEach(p=>{const dt=parseLocalDate(p.date),row=document.createElement('div');row.className='detail-row';row.innerHTML=`<div><div class="detail-row-title">${escapeHtml(p.description||'Compra no cartão')}<span class="card-purchase-badge">${escapeHtml(cardName(p.card))}</span></div><div class="detail-row-meta">dia ${dt.getDate()} · cartão · ${p.installments}x</div></div><div class="detail-row-value card-color">${BRL.format(p.value)}</div>`;monthBox.appendChild(row)})
   }
 
   const rulesBox=$('#recurringRulesList');
@@ -1289,11 +1292,7 @@ $('#newCategoryName').addEventListener('keydown',e=>{
 
 
 function preferredReserveAccounts(){
-  const keys=financeScope==='pj'
-    ?['pj-tax','pj-operating']
-    :['emergency','treasury-2029','treasury-2032'];
-
-  return reserveAccounts.filter(a=>keys.includes(a.systemKey))
+  return reserveAccounts.filter(a=>['emergency','treasury-2029','treasury-2032'].includes(a.systemKey))
 }
 
 function populateReserveSelect(){
@@ -1348,107 +1347,17 @@ function renderReserves(){
   const box=$('#reserveList');
   box.innerHTML='';
 
-  if(financeScope==='pj'){
-    const keys=['pj-tax','pj-operating'];
-    const accounts=investmentAccounts.filter(a=>keys.includes(a.systemKey));
-    const model=buildCashModel();
-    const month=model.monthStats[selectedMonth];
-    const operational=Number(month?.endReal||0);
-    const projected=Number(month?.endProjected||0);
-    const reserved=sum(accounts.map(a=>Number(a.currentValue||0)));
-    const companyTotal=operational+reserved;
-
-    $('#assetKicker').textContent='Dinheiro da empresa separado por finalidade';
-    $('#assetTitle').textContent='Caixa da empresa';
-    $('#assetCopy').textContent='Nem todo saldo da PJ está realmente livre. Separe impostos e segurança operacional antes de pensar em transferências para a PF.';
-    $('#portfolioLabel1').textContent='Caixa total da PJ';
-    $('#portfolioLabel2').textContent='Disponível operacional';
-    $('#portfolioLabel3').textContent='Valores reservados';
-    $('#portfolioLabel4').textContent='Caixa projetado';
-    $('#portfolioCurrent').textContent=BRL.format(companyTotal);
-    $('#portfolioContributed').textContent=BRL.format(operational);
-    $('#portfolioMaturity').textContent=BRL.format(reserved);
-    $('#portfolioFutureGain').textContent=BRL.format(projected);
-    $('#investmentUpdateValues').style.display='none';
-    $('#reserveWithdrawButton').textContent='↙ utilizar reserva';
-    $('#reserveDepositButton').textContent='↗ separar caixa';
-    $('#assetNotice').textContent='A aba PJ é independente da PF. Transferir dinheiro da empresa para a pessoa física deve ser registrado em cada lado conforme a natureza da retirada e a orientação contábil aplicável.';
-
-    const operatingCard=document.createElement('article');
-    operatingCard.className='investment-card';
-    operatingCard.innerHTML=`
-      <div class="investment-card-head">
-        <div>
-          <div class="investment-name">Conta operacional</div>
-          <div class="investment-type">movimentação corrente da empresa</div>
-        </div>
-        <span class="investment-pill">operacional</span>
-      </div>
-      <div class="investment-value">${BRL.format(operational)}</div>
-      <div class="investment-value-label">caixa disponível</div>
-      <div class="investment-meta">
-        <div><span>Projetado</span><b>${BRL.format(projected)}</b></div>
-        <div><span>Reservado fora do caixa</span><b>${BRL.format(reserved)}</b></div>
-      </div>
-      <div class="investment-bars">${[28,34,41,48,52,60,66,71,78,84,91,98].map(v=>`<i style="height:${v}%"></i>`).join('')}</div>
-      <div class="investment-chart-note">evolução visual do caixa operacional</div>`;
-    box.appendChild(operatingCard);
-
-    accounts.forEach(account=>{
-      const card=document.createElement('article');
-      card.className='investment-card';
-      const label=account.systemKey==='pj-tax'?'valores separados para tributos':'segurança financeira do escritório';
-      const pill=account.systemKey==='pj-tax'?'não gastar':'reserva';
-
-      card.innerHTML=`
-        <div class="investment-card-head">
-          <div>
-            <div class="investment-name">${escapeHtml(account.name)}</div>
-            <div class="investment-type">${label}</div>
-          </div>
-          <span class="investment-pill ${account.systemKey==='pj-tax'?'lock':''}">${pill}</span>
-        </div>
-        <div class="investment-value">${BRL.format(Number(account.currentValue||0))}</div>
-        <div class="investment-value-label">valor separado</div>
-        <div class="investment-meta">
-          <div><span>Aportes líquidos</span><b>${BRL.format(Number(account.contributed||0))}</b></div>
-          <div><span>Movimentações</span><b>${(account.lots||[]).length}</b></div>
-        </div>
-        <div class="investment-bars">${investmentBars(account)}</div>
-        <div class="investment-chart-note">evolução do caixa separado</div>
-        <div class="investment-actions">
-          <button class="investment-link" type="button" data-invest-detail="${account.id}">ver evolução</button>
-          <button class="investment-link" type="button" data-invest-save="${account.id}">+ separar</button>
-        </div>`;
-      box.appendChild(card)
-    });
-
-    box.querySelectorAll('[data-invest-save]').forEach(button=>button.addEventListener('click',()=>{
-      openReserveTransferModal('to_reserve',selectedMonth,'');
-      $('#rAccount').value=button.dataset.investSave;
-      refreshReserveRateField()
-    }));
-
-    box.querySelectorAll('[data-invest-detail]').forEach(button=>button.addEventListener('click',()=>openInvestmentDetail(button.dataset.investDetail)));
-    return
-  }
-
   const accounts=investmentAccounts.filter(a=>['emergency','treasury-2029','treasury-2032'].includes(a.systemKey)).sort((a,b)=>{
     const order={'emergency':1,'treasury-2029':2,'treasury-2032':3};
-    return (order[a.systemKey]||20)-(order[b.systemKey]||20)||Number(a.sortOrder||0)-Number(b.sortOrder||0)
+    const ao=order[a.systemKey]||20;
+    const bo=order[b.systemKey]||20;
+    return ao-bo||Number(a.sortOrder||0)-Number(b.sortOrder||0)
   });
 
-  $('#assetKicker').textContent='Patrimônio separado do dinheiro de gastar';
-  $('#assetTitle').textContent='Reservas e investimentos';
-  $('#assetCopy').textContent='Guardar reduz o saldo disponível sem virar despesa. Nos Prefixados, a posição atual fica separada do valor contratado no vencimento.';
-  $('#portfolioLabel1').textContent='Posição atual total';
-  $('#portfolioLabel2').textContent='Total aportado';
-  $('#portfolioLabel3').textContent='Projetado bruto no vencimento';
-  $('#portfolioLabel4').textContent='Ganho contratado futuro*';
-  $('#investmentUpdateValues').style.display='';
-  $('#reserveWithdrawButton').textContent='↙ Resgatar';
-  $('#reserveDepositButton').textContent='↗ Guardar dinheiro';
-  $('#assetNotice').textContent='*No Tesouro Prefixado, a taxa é contratada em cada compra. Se você carregar o título até o vencimento, a projeção segue aquela taxa. Antes disso, a posição pode subir ou cair por marcação a mercado.';
+  if(!accounts.length){
+    box.innerHTML='<div class="helper" style="padding:12px 0">Nenhuma reserva cadastrada.</div>';
+    return
+  }
 
   let currentTotal=0;
   let contributedTotal=0;
@@ -1473,12 +1382,15 @@ function renderReserves(){
         </div>
         <span class="investment-pill ${treasury?'lock':''}">${treasury?'até o vencimento':'liquidez'}</span>
       </div>
+
       <div class="investment-value">${BRL.format(Number(account.currentValue||0))}</div>
       <div class="investment-value-label">${treasury?'posição atual informada':'saldo atual'}</div>
+
       <div class="investment-meta">
         <div><span>Aportado</span><b>${BRL.format(Number(account.contributed||0))}</b></div>
         <div><span>${treasury?'Mercado x aportado':'Diferença'}</span><b class="${marketGain>=0?'good':'bad'}">${marketGain>=0?'+ ':''}${BRL.format(marketGain)}</b></div>
       </div>
+
       ${treasury?`
         <div class="contract-box">
           <div class="contract-line"><span>Taxa dos lotes</span><b>${investmentRateLabel(account.weightedRate??account.defaultRate)}</b></div>
@@ -1486,12 +1398,15 @@ function renderReserves(){
           <div class="contract-line"><span>Ganho contratado futuro</span><b class="good">${futureGain>=0?'+ ':''}${BRL.format(futureGain)}</b></div>
         </div>
       `:''}
+
       <div class="investment-bars">${investmentBars(account)}</div>
       <div class="investment-chart-note">${account.valuations?.length?'evolução das posições informadas':'evolução dos aportes registrados'}</div>
+
       <div class="investment-actions">
         <button class="investment-link" type="button" data-invest-detail="${account.id}">ver lotes e evolução</button>
         <button class="investment-link" type="button" data-invest-save="${account.id}">+ aportar</button>
       </div>`;
+
     box.appendChild(card)
   });
 
@@ -1702,7 +1617,7 @@ function openInvestmentUpdate(){
   const box=$('#investmentUpdateFields');
   box.innerHTML='';
 
-  investmentAccounts.filter(a=>financeScope==='pj'?['pj-tax','pj-operating'].includes(a.systemKey):['emergency','treasury-2029','treasury-2032'].includes(a.systemKey)).forEach(account=>{
+  investmentAccounts.filter(a=>['emergency','treasury-2029','treasury-2032'].includes(a.systemKey)).forEach(account=>{
     const field=document.createElement('div');
     field.className='field full';
     field.innerHTML=`<label>${escapeHtml(account.name)} · posição atual</label><input data-investment-current="${account.id}" type="number" min="0" step="0.01" value="${Number(account.currentValue||0).toFixed(2)}">`;
@@ -1712,7 +1627,7 @@ function openInvestmentUpdate(){
   investmentUpdateBackdrop.classList.add('open')
 }
 
-$('#investmentUpdateValues').addEventListener('click',()=>{if(financeScope==='pf')openInvestmentUpdate()});
+$('#investmentUpdateValues').addEventListener('click',openInvestmentUpdate);
 $('#closeInvestmentUpdate').addEventListener('click',()=>investmentUpdateBackdrop.classList.remove('open'));
 $('#cancelInvestmentUpdate').addEventListener('click',()=>investmentUpdateBackdrop.classList.remove('open'));
 investmentUpdateBackdrop.addEventListener('click',e=>{if(e.target===investmentUpdateBackdrop)investmentUpdateBackdrop.classList.remove('open')});
@@ -1850,7 +1765,7 @@ reserveTransferModal.addEventListener('click',e=>{if(e.target===reserveTransferM
 $('#closeReserveManagerModal').addEventListener('click',()=>reserveManagerModal.classList.remove('open'));
 reserveManagerModal.addEventListener('click',e=>{if(e.target===reserveManagerModal)reserveManagerModal.classList.remove('open')});
 
-function openModal(mode){editingTransactionId=null;savingTest=false;formMode=mode;const pj=financeScope==='pj';$('#modalTitle').textContent=mode==='expense'?(pj?'Registrar despesa':'Registrar gasto'):(pj?'Registrar receita':'Registrar entrada');$('#modalKicker').textContent=mode==='expense'?(pj?'Nova despesa':'Novo gasto'):(pj?'Nova receita':'Nova entrada');$('#natureField').style.display=mode==='expense'?'block':'none';$('#categoryField').style.display=mode==='expense'?'block':'none';$('#fMonth').value=String(selectedMonth);$('#fDate').value='';$('#fValue').value='';$('#fDescription').value='';$('#fStatus').value='provisioned';$('#modalHelper').textContent='Provisionado afeta o saldo projetado. Realizado afeta também o saldo real.';modal.classList.add('open')}
+function openModal(mode){editingTransactionId=null;savingTest=false;formMode=mode;$('#modalTitle').textContent=mode==='expense'?'Registrar gasto':'Registrar entrada';$('#modalKicker').textContent=mode==='expense'?'Novo gasto':'Nova entrada';$('#natureField').style.display=mode==='expense'?'block':'none';$('#categoryField').style.display=mode==='expense'?'block':'none';$('#fMonth').value=String(selectedMonth);$('#fDate').value='';$('#fValue').value='';$('#fDescription').value='';$('#fStatus').value='provisioned';$('#modalHelper').textContent='Provisionado afeta o saldo projetado. Realizado afeta também o saldo real.';modal.classList.add('open')}
 function openEditModal(t){editingTransactionId=t.id;savingTest=false;formMode=t.type;$('#modalTitle').textContent='Editar lançamento';$('#modalKicker').textContent=t.type==='expense'?'Gasto':'Entrada';$('#natureField').style.display=t.type==='expense'?'block':'none';$('#categoryField').style.display=t.type==='expense'?'block':'none';$('#fMonth').value=String(t.month);$('#fDate').value=String(t.day);$('#fValue').value=String(t.value);if(t.type==='expense'){$('#fNature').value=t.nature;$('#fCategory').value=t.category}$('#fStatus').value=t.status;$('#fDescription').value=t.description||'';$('#dayDrawer').classList.remove('open');modal.classList.add('open')}
 function openSaveTestModal(){
   if(!testDraft||!Number(testDraft.value))return;
@@ -1873,13 +1788,30 @@ function openSaveTestModal(){
     :'A entrada será salva como provisionada por padrão, mas você pode mudar para realizada.';
   modal.classList.add('open')
 }
+$('#addCardPurchase').addEventListener('click',()=>openCardPurchase());
+$('#addCardPurchase2').addEventListener('click',()=>openCardPurchase());
+$('#manageCards').addEventListener('click',openCardManager);
+$('#closeCardPurchase').addEventListener('click',()=>cardPurchaseBackdrop.classList.remove('open'));
+$('#cancelCardPurchase').addEventListener('click',()=>cardPurchaseBackdrop.classList.remove('open'));
+cardPurchaseBackdrop.addEventListener('click',e=>{if(e.target===cardPurchaseBackdrop)cardPurchaseBackdrop.classList.remove('open')});
+$('#closeCardManager').addEventListener('click',()=>cardManagerBackdrop.classList.remove('open'));
+cardManagerBackdrop.addEventListener('click',e=>{if(e.target===cardManagerBackdrop)cardManagerBackdrop.classList.remove('open')});
+['pDate','pCard','pValue','pInstallments'].forEach(id=>$('#'+id).addEventListener('input',updateCardPurchasePreview));
+$('#cardPurchaseForm').addEventListener('submit',async e=>{
+  e.preventDefault();const date=$('#pDate').value,value=Number($('#pValue').value),installments=Number($('#pInstallments').value),payload={date,card:$('#pCard').value,category:$('#pCategory').value,value,installments,description:$('#pDescription').value.trim()||'Compra no cartão'};
+  try{if(editingCardPurchaseId)await api(`/api/finance/card-purchases/${encodeURIComponent(editingCardPurchaseId)}`,{method:'PUT',body:JSON.stringify(payload)});else await api('/api/finance/card-purchases',{method:'POST',body:JSON.stringify(payload)});const dt=parseLocalDate(date);if(dt&&dt.getFullYear()===currentYear)selectedMonth=dt.getMonth();cardPurchaseBackdrop.classList.remove('open');await loadYear(currentYear,false);scrollToMonth(selectedMonth,false)}catch(err){showError(err.message)}
+});
+$('#createCardButton').addEventListener('click',async()=>{
+  const name=$('#newCardName').value.trim(),closingDay=Number($('#newCardClose').value),dueDay=Number($('#newCardDue').value);if(!name){$('#cardManagerError').textContent='Informe o nome do cartão.';return}
+  try{await api('/api/finance/cards',{method:'POST',body:JSON.stringify({name,closingDay,dueDay})});$('#newCardName').value='';await loadYear(currentYear,false);renderCardManager()}catch(e){$('#cardManagerError').textContent=e.message}
+});
 $('#saveTest').addEventListener('click',openSaveTestModal);$('#addExpense').addEventListener('click',()=>openModal('expense'));$('#addIncome').addEventListener('click',()=>openModal('income'));$('#closeModal').addEventListener('click',()=>modal.classList.remove('open'));$('#cancelModal').addEventListener('click',()=>modal.classList.remove('open'));modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')});
 
 MONTHS.forEach((name,i)=>{
   const o=document.createElement('option');o.value=i;o.textContent=name;$('#fMonth').appendChild(o);
   const r=document.createElement('option');r.value=i;r.textContent=name;$('#rMonth').appendChild(r)
 });
-$('#entryForm').addEventListener('submit',async e=>{e.preventDefault();const month=Number($('#fMonth').value),day=Number($('#fDate').value),value=Number($('#fValue').value);if(!value||day<1||day>daysInMonth(month))return;const payload={year:currentYear,month,day,type:formMode,value,nature:formMode==='expense'?$('#fNature').value:null,category:formMode==='expense'?$('#fCategory').value:null,status:$('#fStatus').value,description:$('#fDescription').value.trim()||(formMode==='expense'?(financeScope==='pj'?'Despesa':'Gasto'):(financeScope==='pj'?'Receita':'Entrada'))};try{if(editingTransactionId)await api(`/api/finance/transactions/${encodeURIComponent(editingTransactionId)}`,{method:'PUT',body:JSON.stringify(payload)});else await api('/api/finance/transactions',{method:'POST',body:JSON.stringify(payload)});selectedMonth=month;if(savingTest)testDraft=null;modal.classList.remove('open');await loadYear(currentYear,false);scrollToMonth(month,false)}catch(err){showError(err.message)}});
+$('#entryForm').addEventListener('submit',async e=>{e.preventDefault();const month=Number($('#fMonth').value),day=Number($('#fDate').value),value=Number($('#fValue').value);if(!value||day<1||day>daysInMonth(month))return;const payload={year:currentYear,month,day,type:formMode,value,nature:formMode==='expense'?$('#fNature').value:null,category:formMode==='expense'?$('#fCategory').value:null,status:$('#fStatus').value,description:$('#fDescription').value.trim()||(formMode==='expense'?'Gasto':'Entrada')};try{if(editingTransactionId)await api(`/api/finance/transactions/${encodeURIComponent(editingTransactionId)}`,{method:'PUT',body:JSON.stringify(payload)});else await api('/api/finance/transactions',{method:'POST',body:JSON.stringify(payload)});selectedMonth=month;if(savingTest)testDraft=null;modal.classList.remove('open');await loadYear(currentYear,false);scrollToMonth(month,false)}catch(err){showError(err.message)}});
 
 async function saveYearSettings(){try{await api('/api/finance/year',{method:'PUT',body:JSON.stringify({year:currentYear,openingBalance:yearOpeningBalance,warningThreshold})});showError('')}catch(e){showError(e.message)}}
 $('#openingBalance').addEventListener('change',async e=>{yearOpeningBalance=Number(e.target.value)||0;renderAll();await saveYearSettings()});
@@ -1892,19 +1824,6 @@ const scroller=$('#annualScroll');let dragging=false,startX=0,startLeft=0;
 scroller.addEventListener('pointerdown',e=>{if(e.target.closest('input,button,select,a')||e.target.closest('.entry-cell')||e.target.closest('.date-click'))return;dragging=true;startX=e.clientX;startLeft=scroller.scrollLeft;scroller.classList.add('dragging');scroller.setPointerCapture(e.pointerId)});
 scroller.addEventListener('pointermove',e=>{if(dragging)scroller.scrollLeft=startLeft-(e.clientX-startX)});function stopDrag(){dragging=false;scroller.classList.remove('dragging')}scroller.addEventListener('pointerup',stopDrag);scroller.addEventListener('pointercancel',stopDrag);
 function scrollToMonth(month,smooth=true){const head=$(`.month-head th[data-month="${month}"]`);if(head)scroller.scrollTo({left:head.offsetLeft-16,behavior:smooth?'smooth':'auto'});$('#scrollPosition').textContent=`${MONTHS[month]} em foco`}
-
-document.querySelectorAll('[data-finance-scope]').forEach(button=>button.addEventListener('click',async()=>{
-  const nextScope=button.dataset.financeScope;
-  if(nextScope===financeScope)return;
-
-  financeScope=nextScope;
-  localStorage.setItem('finance_scope',financeScope);
-  testDraft=null;
-  selectedBudgetCategory=null;
-  applyScopeUI();
-  await loadYear(currentYear,false);
-  scrollToMonth(selectedMonth,false)
-}));
 
 async function loadYear(year,scroll=true){
   showError('');
@@ -1924,6 +1843,10 @@ async function loadYear(year,scroll=true){
     reserveTransfers=Array.isArray(state.reserveTransfers)?state.reserveTransfers:[];
     investmentAccounts=Array.isArray(investmentData.accounts)?investmentData.accounts:[];
     recurringRules=Array.isArray(state.recurringRules)?state.recurringRules:[];
+    creditCards=Array.isArray(state.creditCards)?state.creditCards:[];
+    creditCardCatalog=Array.isArray(state.creditCardCatalog)?state.creditCardCatalog:creditCards.map(c=>({...c,active:true}));
+    creditCardPurchases=Array.isArray(state.creditCardPurchases)?state.creditCardPurchases:[];
+    creditCardInvoices=Array.isArray(state.creditCardInvoices)?state.creditCardInvoices:[];
     populateCategorySelect();
     populateReserveSelect();
     renderAll();
@@ -1931,7 +1854,6 @@ async function loadYear(year,scroll=true){
   }catch(e){showError(e.message)}
 }
 
-applyScopeUI();
 loadYear(currentYear,true);
 </script>
 </body>

@@ -254,7 +254,7 @@ h1{font-size:25px;line-height:1;margin:0;color:var(--strong);letter-spacing:-.04
   <div>
     <div class="kicker">Fluxo de caixa anual</div>
     <h2>Visão dos 12 meses</h2>
-    <p>Clique em Entrada, Saída, Diário ou Cartão para lançar valores. Compras no crédito entram no orçamento na data da compra e só saem do caixa quando a fatura é paga.</p>
+    <p>Clique em Entrada, Saída ou Cartão para lançar valores. Compras no crédito entram no orçamento na data da compra e só saem do caixa quando a fatura é paga.</p>
   </div>
   <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
     <div class="year-switch">
@@ -770,24 +770,23 @@ function renderAll(){buildAnnualTable();renderSelectedMonth();renderCards();rend
 
 function buildAnnualTable(){
   const model=buildCashModel(),table=$('#annualTable');let cols='',h1='<tr class="month-head">',h2='<tr class="sub-head">';
-  for(let m=0;m<12;m++){cols+='<col class="date"><col class="money"><col class="money"><col class="money"><col class="cardcol"><col class="reserve"><col class="money">';h1+=`<th colspan="7" data-month="${m}" class="${m===selectedMonth?'selected':''} month-end">${MONTHS[m]}</th>`;h2+='<th class="date-col">Data</th><th>Entrada</th><th>Saída</th><th>Diário</th><th class="card-head">Cartão</th><th>Reserva</th><th class="month-end">Saldo</th>'}
+  for(let m=0;m<12;m++){cols+='<col class="date"><col class="money"><col class="money"><col class="cardcol"><col class="reserve"><col class="money">';h1+=`<th colspan="6" data-month="${m}" class="${m===selectedMonth?'selected':''} month-end">${MONTHS[m]}</th>`;h2+='<th class="date-col">Data</th><th>Entrada</th><th>Saída</th><th class="card-head">Cartão</th><th>Reserva</th><th class="month-end">Saldo</th>'}
   h1+='</tr>';h2+='</tr>';let body='<tbody>';
   for(let d=1;d<=31;d++){
     body+='<tr>';
     for(let m=0;m<12;m++){
-      if(d>daysInMonth(m)){body+='<td class="date-col"></td><td></td><td></td><td></td><td></td><td></td><td class="month-end"></td>';continue}
-      const items=txDay(m,d),incomes=items.filter(t=>t.type==='income'),fixed=items.filter(t=>t.type==='expense'&&t.nature==='fixed'),daily=items.filter(t=>t.type==='expense'&&t.nature==='daily');
+      if(d>daysInMonth(m)){body+='<td class="date-col"></td><td></td><td></td><td></td><td></td><td class="month-end"></td>';continue}
+      const items=txDay(m,d),incomes=items.filter(t=>t.type==='income'),expenses=items.filter(t=>t.type==='expense');
       const transfers=reserveDay(m,d),purchases=cardPurchasesDay(m,d),dueGroups=invoiceGroupsForDay(m,d);
-      const income=sum(incomes.map(t=>t.value)),fixedValue=sum(fixed.map(t=>t.value)),dailyValue=sum(daily.map(t=>t.value)),point=modelDay(model,m,d),simulated=draftApplies(m,d);
+      const income=sum(incomes.map(t=>t.value)),expenseValue=sum(expenses.map(t=>t.value)),point=modelDay(model,m,d),simulated=draftApplies(m,d);
       const reserveNet=sum(transfers.map(t=>t.direction==='to_reserve'?Number(t.value):-Number(t.value)));
       const cardBought=sum(purchases.map(p=>p.value)),invoiceDue=sum(dueGroups.map(i=>i.amount));
-      const incomeDraft=draftOnCell(m,d,'income'),fixedDraft=draftOnCell(m,d,'expense','fixed'),dailyDraft=draftOnCell(m,d,'expense','daily');
+      const incomeDraft=draftOnCell(m,d,'income'),expenseDraft=draftOnCell(m,d,'expense');
       const hasAny=items.length||transfers.length||purchases.length||dueGroups.length;
       let cardText='';if(cardBought&&invoiceDue)cardText=`${BRL.format(cardBought)} · fatura ${BRL.format(invoiceDue)}`;else if(invoiceDue)cardText=`fatura ${BRL.format(invoiceDue)}`;else if(cardBought)cardText=BRL.format(cardBought);
       body+=`<td class="date-col ${hasAny?'date-click':''}" data-month="${m}" data-day="${d}">${d}</td>
         <td class="entry-cell ${incomes.length?'has-entry ':''}${entryClass(incomes,'income')}" data-cell-month="${m}" data-cell-day="${d}" data-cell-type="income" data-has-entry="${incomes.length?'1':'0'}">${incomeDraft?`<input class="inline-test-input" data-inline-test value="${testDraft.value||''}" inputmode="decimal">`:income?BRL.format(income):''}</td>
-        <td class="entry-cell ${fixed.length?'has-entry ':''}${entryClass(fixed,'expense')}" data-cell-month="${m}" data-cell-day="${d}" data-cell-type="expense" data-cell-nature="fixed" data-has-entry="${fixed.length?'1':'0'}">${fixedDraft?`<input class="inline-test-input" data-inline-test value="${testDraft.value||''}" inputmode="decimal">`:fixedValue?BRL.format(fixedValue):''}</td>
-        <td class="entry-cell ${daily.length?'has-entry ':''}${entryClass(daily,'expense')}" data-cell-month="${m}" data-cell-day="${d}" data-cell-type="expense" data-cell-nature="daily" data-has-entry="${daily.length?'1':'0'}">${dailyDraft?`<input class="inline-test-input" data-inline-test value="${testDraft.value||''}" inputmode="decimal">`:dailyValue?BRL.format(dailyValue):''}</td>
+        <td class="entry-cell ${expenses.length?'has-entry ':''}${entryClass(expenses,'expense')}" data-cell-month="${m}" data-cell-day="${d}" data-cell-type="expense" data-cell-nature="fixed" data-has-entry="${expenses.length?'1':'0'}">${expenseDraft?`<input class="inline-test-input" data-inline-test value="${testDraft.value||''}" inputmode="decimal">`:expenseValue?BRL.format(expenseValue):''}</td>
         <td class="card-purchase ${invoiceDue?'invoice-due':''}" data-card-month="${m}" data-card-day="${d}" data-has-card="${purchases.length||dueGroups.length?'1':'0'}" title="${invoiceDue?'Vencimento de fatura':'Compra no cartão — não reduz o caixa hoje'}">${cardText}</td>
         <td class="entry-cell reserve-move ${transfers.length?'has-entry ':''}${transfers.some(t=>t.status==='provisioned')?'provisioned':''}" data-reserve-month="${m}" data-reserve-day="${d}" data-has-reserve="${transfers.length?'1':'0'}">${reserveNet?`${reserveNet>0?'↗':'↙'} ${BRL.format(Math.abs(reserveNet))}`:''}</td>
         <td class="month-end ${balanceClass(point.projected,simulated)}">${BRL.format(point.projected)}</td>`;
@@ -795,7 +794,7 @@ function buildAnnualTable(){
     body+='</tr>';
   }
   body+='</tbody>';let foot='<tfoot><tr class="month-footer">';
-  model.monthStats.forEach(t=>{const reserveNet=t.reserveTo-t.reserveFrom;foot+=`<td class="date-col">total</td><td>${t.incomeReal+t.incomeProv?BRL.format(t.incomeReal+t.incomeProv):''}</td><td>${t.fixed?BRL.format(t.fixed):''}</td><td>${t.daily?BRL.format(t.daily):''}</td><td class="card-purchase">${t.cardPurchases?BRL.format(t.cardPurchases):''}</td><td>${reserveNet?`${reserveNet>0?'↗':'↙'} ${BRL.format(Math.abs(reserveNet))}`:''}</td><td class="month-end ${balanceClass(t.endProjected,false)}">${BRL.format(t.endProjected)}</td>`});
+  model.monthStats.forEach(t=>{const reserveNet=t.reserveTo-t.reserveFrom;const totalExpenses=t.fixed+t.daily;foot+=`<td class="date-col">total</td><td>${t.incomeReal+t.incomeProv?BRL.format(t.incomeReal+t.incomeProv):''}</td><td>${totalExpenses?BRL.format(totalExpenses):''}</td><td class="card-purchase">${t.cardPurchases?BRL.format(t.cardPurchases):''}</td><td>${reserveNet?`${reserveNet>0?'↗':'↙'} ${BRL.format(Math.abs(reserveNet))}`:''}</td><td class="month-end ${balanceClass(t.endProjected,false)}">${BRL.format(t.endProjected)}</td>`});
   foot+='</tr></tfoot>';table.innerHTML=`<colgroup>${cols}</colgroup><thead>${h1}${h2}</thead>${body}${foot}`;
   table.querySelectorAll('.month-head th').forEach(th=>th.addEventListener('click',()=>{selectedMonth=Number(th.dataset.month);renderAll()}));
   table.querySelectorAll('.date-click').forEach(td=>td.addEventListener('click',()=>openDrawer(Number(td.dataset.month),Number(td.dataset.day))));
@@ -804,9 +803,8 @@ function buildAnnualTable(){
   table.querySelectorAll('[data-reserve-month]').forEach(td=>td.addEventListener('click',()=>{const month=Number(td.dataset.reserveMonth),day=Number(td.dataset.reserveDay);if(td.dataset.hasReserve==='1')openDrawer(month,day);else openReserveTransferModal('to_reserve',month,day)}));
   const input=table.querySelector('[data-inline-test]');if(input){input.focus();input.select();input.addEventListener('input',()=>{testDraft.value=Math.max(0,Number(input.value.replace(',','.'))||0);renderPreviewWithoutReplacingInput()});input.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();discardTest()}if(e.key==='Enter'){e.preventDefault();openSaveTestModal()}})}
 }
-
 function renderPreviewWithoutReplacingInput(){
-  const model=buildCashModel();document.querySelectorAll('.annual-table tbody tr').forEach((tr,rowIndex)=>{const day=rowIndex+1,cells=[...tr.children];for(let m=0;m<12;m++){const balanceCell=cells[m*7+6];if(!balanceCell||day>daysInMonth(m))continue;const point=modelDay(model,m,day);balanceCell.textContent=BRL.format(point.projected);balanceCell.className=`month-end ${balanceClass(point.projected,draftApplies(m,day))}`}});renderSelectedMonth();renderTestBar()
+  const model=buildCashModel();document.querySelectorAll('.annual-table tbody tr').forEach((tr,rowIndex)=>{const day=rowIndex+1,cells=[...tr.children];for(let m=0;m<12;m++){const balanceCell=cells[m*6+5];if(!balanceCell||day>daysInMonth(m))continue;const point=modelDay(model,m,day);balanceCell.textContent=BRL.format(point.projected);balanceCell.className=`month-end ${balanceClass(point.projected,draftApplies(m,day))}`}});renderSelectedMonth();renderTestBar()
 }
 function beginInlineTest(month,day,type,nature=null){
   testDraft={year:currentYear,month,day,type,nature,value:0};
